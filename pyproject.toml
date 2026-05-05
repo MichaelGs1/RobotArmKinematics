@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kinematics"
+version = "0.1.0"
+description = "Kinematics package"
+authors = [{name = "Michaël Gross"}]
+requires-python = ">=3.11"
+
+dependencies = [
+    "numpy",
+    "torch",
+    "numba",
+    "scipy",
+    "tqdm",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
