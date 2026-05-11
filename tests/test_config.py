@@ -1,9 +1,14 @@
 import numpy as np
 
 from kinematics.config.doosan_m0609 import DoosanM0609Config
+from kinematics.config.ur20 import UR20Config
+from kinematics.config.ur10 import UR10Config
+
 from kinematics.utils import dh_mat
 
 def main():
+    config = UR20Config()
+    config = UR10Config()
     config = DoosanM0609Config()
     print("DHM parameters :")
     print(config.parameter_d)

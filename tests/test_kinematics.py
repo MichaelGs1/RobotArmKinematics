@@ -5,12 +5,14 @@ from scipy.spatial.transform import Rotation as R
 
 from kinematics.config.doosan_m0609 import DoosanM0609Config
 from kinematics.config.ur20 import UR20Config
+from kinematics.config.ur10 import UR10Config
 from kinematics.core import *
 from kinematics.utils import *
 
 def main():
     config = DoosanM0609Config()
     # config = UR20Config()
+    # config = UR10Config()
 
     # tcp pose
     tcp = np.identity(4)
@@ -21,7 +23,6 @@ def main():
 
     q = np.deg2rad(np.array([0, 0, -90, 0, -90, 180]))
     list_transforms = get_dh_mat(q, config.parameter_d, config.parameter_r, config.parameter_alpha, config.parameter_theta)
-
 
     def test_ik_consistency_with_fk(q):
         # 2. Calculer la pose initiale avec fk

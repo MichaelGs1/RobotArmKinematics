@@ -4,7 +4,7 @@ import numpy as np
 
 
 class BaseConfig(ABC):
-    def __init__(self, d: np.array, r: np.array, alpha: np.array, theta: np.array , qmin: np.array, qmax: np.array, q_point_max: np.array, torque_max: np.array, masses: np.array=None, cog: np.array=None, tcp: np.array = np.identity(4)):
+    def __init__(self, d: np.array, r: np.array, alpha: np.array, theta: np.array , qmin: np.array, qmax: np.array, q_point_max: np.array=None, torque_max: np.array=None, masses: np.array=None, cog: np.array=None, tcp: np.array = np.identity(4)):
         self._parameter_d = d
         self._parameter_r = r
         self._parameter_alpha = alpha
