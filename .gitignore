@@ -1,4 +1,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
--egg-info
+*.egg-info/
+.mypy_cache
+.pytest_cache
+.ruff_cache

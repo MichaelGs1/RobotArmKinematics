@@ -1,0 +1,28 @@
+repos:
+  # Ruff (linting + formatage)
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check --fix
+        language: system
+        types: [python]
+        args: [--exit-non-zero-on-fix]  # Échoue si des corrections sont appliquées
+
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format
+        language: system
+        types: [python]
+
+  # pytest (tests)
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        args: [--tb=short, -q]  # Affiche une traceback courte et mode silencieux
+        pass_filenames: false  # Exécute pytest une seule fois (pas par fichier)
+        stages: [pre-commit]  # Exécute avant le commit
