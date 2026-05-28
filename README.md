@@ -78,7 +78,7 @@ Each joint is described by 4 parameters that define the transformation from one 
 ```
 
 Homogeneous Transformation (Khalil Convention):
-$$T_i^{i-1} = Rot(z_{i-1}, θ_i) × Trans(z_{i-1}, d_i) × Trans(x_i, d_i) × Rx(α)$$
+$$T_i^{i-1} = Rot(x_{i-1}, α_i) × Trans(x_{i-1}, a_i) × Rot(z_i, θ_i) × Trans(z_{i-1}, d_i)$$
 
 
 ### Transformation Matrix Visualization
