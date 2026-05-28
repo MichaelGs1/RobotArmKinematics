@@ -7,14 +7,14 @@ from kinematics.core import get_dh_mat
 class DoosanM0609Config(BaseConfig):
     def __init__(self) -> None:
         # doosan dh
-        d3 = 0.411
-        r1 = 0.135
-        r2 = 0.00625
-        r4 = 0.368
-        r6 = 0.121
+        a3 = 0.411
+        d1 = 0.135
+        d2 = 0.00625
+        d4 = 0.368
+        d6 = 0.121
 
-        d = np.array([0, 0, d3, 0, 0, 0])
-        r = np.array([r1, r2, 0, r4, 0, r6])
+        a = np.array([0, 0, a3, 0, 0, 0])
+        d = np.array([d1, d2, 0, d4, 0, d6])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
 
@@ -47,12 +47,12 @@ class DoosanM0609Config(BaseConfig):
 
         # compute cog in link frame
         t01, t02, t03, t04, t05, t06 = get_dh_mat(
-            np.array([0, 0, 0, 0, 0, 0]), d, r, alpha, theta
+            np.array([0, 0, 0, 0, 0, 0]), a, d, alpha, theta
         )
         array_t = np.array([t01, t02, t03, t04, t05, t06, np.identity(4)])
         for i in range(cog.shape[0]):
             cog[i] = (np.linalg.inv(array_t[i]) @ np.append(cog[i], 1.0))[:3]
 
         super().__init__(
-            d, r, alpha, theta, q_min, q_max, q_point_max, torque_max, masses, cog
+            a, d, alpha, theta, q_min, q_max, q_point_max, torque_max, masses, cog
         )

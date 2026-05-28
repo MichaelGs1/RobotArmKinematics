@@ -9,8 +9,8 @@ def main() -> None:
     # config = UR10Config()
     # config = DoosanM0609Config()
     print("DHM parameters :")
+    print(config.parameter_a)
     print(config.parameter_d)
-    print(config.parameter_r)
     print(config.parameter_alpha)
     print(config.parameter_theta)
 
@@ -23,8 +23,8 @@ def main() -> None:
     print("TCP : ", config.parameter_tcp)
 
     res = dh_mat(
+        config.parameter_a[0],
         config.parameter_d[0],
-        config.parameter_r[0],
         config.parameter_alpha[0],
         config.parameter_theta[0],
     )

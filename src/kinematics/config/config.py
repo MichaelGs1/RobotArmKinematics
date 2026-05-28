@@ -22,8 +22,8 @@ class BaseConfig(ABC):
     configuration implementations.
 
     Attributes:
+        parameter_a (np.ndarray): Denavit-Hartenberg (Kahlil) a parameters.
         parameter_d (np.ndarray): Denavit-Hartenberg (Kahlil) d parameters.
-        parameter_r (np.ndarray): Denavit-Hartenberg (Kahlil) r parameters.
         parameter_alpha (np.ndarray): Denavit-Hartenberg (Kahlil) alpha parameters.
         parameter_theta (np.ndarray): Denavit-Hartenberg (Kahlil) theta parameters.
         parameter_qmin (np.ndarray): Minimum joint limits.
@@ -35,10 +35,24 @@ class BaseConfig(ABC):
         parameter_cog (np.ndarray | None): Centers of gravity of the robot links.
     """
 
+    __slots__ = (
+        "_parameter_a",
+        "_parameter_d",
+        "_parameter_alpha",
+        "_parameter_theta",
+        "_parameter_qmin",
+        "_parameter_qmax",
+        "_parameter_tcp",
+        "_parameter_q_point_max",
+        "_parameter_torque_max",
+        "_masses_parameter",
+        "_cog_parameter",
+    )
+
     def __init__(
         self,
+        a: np.ndarray,
         d: np.ndarray,
-        r: np.ndarray,
         alpha: np.ndarray,
         theta: np.ndarray,
         qmin: np.ndarray,
@@ -53,8 +67,8 @@ class BaseConfig(ABC):
         Initialize the BaseConfig with robot parameters.
 
         Args:
+            a (np.ndarray): Denavit-Hartenberg (Kahlil) a parameters.
             d (np.ndarray): Denavit-Hartenberg (Kahlil) d parameters.
-            r (np.ndarray): Denavit-Hartenberg (Kahlil) r parameters.
             alpha (np.ndarray): Denavit-Hartenberg (Kahlil) alpha parameters.
             theta (np.ndarray): Denavit-Hartenberg (Kahlil) theta parameters.
             qmin (np.ndarray): Minimum joint limits.
@@ -65,8 +79,8 @@ class BaseConfig(ABC):
             cog (np.ndarray | None, optional): Centers of gravity of the robot links. Defaults to None.
             tcp (np.ndarray, optional): Tool Center Point transformation matrix. Defaults to identity matrix.
         """
+        self._parameter_a: np.ndarray = a
         self._parameter_d: np.ndarray = d
-        self._parameter_r: np.ndarray = r
         self._parameter_alpha: np.ndarray = alpha
         self._parameter_theta: np.ndarray = theta
 
@@ -87,9 +101,9 @@ class BaseConfig(ABC):
         return self._parameter_d
 
     @property
-    def parameter_r(self) -> np.ndarray:
-        """Get the Denavit-Hartenberg (Kahlil) r parameters."""
-        return self._parameter_r
+    def parameter_a(self) -> np.ndarray:
+        """Get the Denavit-Hartenberg (Kahlil) a parameters."""
+        return self._parameter_a
 
     @property
     def parameter_alpha(self) -> np.ndarray:

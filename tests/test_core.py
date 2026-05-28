@@ -18,13 +18,13 @@ class TestGetDhMat:
     def test_zero_joint_angles(self):
         """Test DH matrix chain with zero joint angles."""
         # Simple 3-DOF example
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, d, r, alpha, theta)
+        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
 
         # All should be 4x4 matrices
         assert T01.shape == (4, 4)
@@ -40,13 +40,13 @@ class TestGetDhMat:
 
     def test_chained_transforms_structure(self):
         """Test that chained transforms have proper structure."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
 
-        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, d, r, alpha, theta)
+        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
 
         # T02 should be approximately T01 @ T12
         # We can test that determinants are 1 (proper rotations)
@@ -56,16 +56,16 @@ class TestGetDhMat:
 
     def test_different_q_values(self):
         """Test that different joint angles produce different transforms."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
 
         q1 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         q2 = np.array([np.pi / 4, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        _, _, _, _, _, T06_q1 = get_dh_mat(q1, d, r, alpha, theta)
-        _, _, _, _, _, T06_q2 = get_dh_mat(q2, d, r, alpha, theta)
+        _, _, _, _, _, T06_q1 = get_dh_mat(q1, a, d, alpha, theta)
+        _, _, _, _, _, T06_q2 = get_dh_mat(q2, a, d, alpha, theta)
 
         # Different joint angles should produce different end-effector poses
         assert not np.allclose(T06_q1, T06_q2)
@@ -76,22 +76,22 @@ class TestForwardKinematics:
 
     def test_fk_with_identity_tcp(self):
         """Test FK with identity TCP transformation."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         tcp = np.identity(4)
 
-        T = fk(q, d, r, alpha, theta, tcp)
+        T = fk(q, a, d, alpha, theta, tcp)
 
         assert T.shape == (4, 4)
         np.testing.assert_array_almost_equal(T[3, :], [0, 0, 0, 1])
 
     def test_fk_with_tcp_offset(self):
         """Test FK with TCP tool offset."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -99,8 +99,8 @@ class TestForwardKinematics:
         tcp = np.identity(4)
         tcp[2, 3] = 0.2  # 20 cm offset in Z
 
-        T_with_tcp = fk(q, d, r, alpha, theta, tcp)
-        T_no_tcp = fk(q, d, r, alpha, theta, np.identity(4))
+        T_with_tcp = fk(q, a, d, alpha, theta, tcp)
+        T_no_tcp = fk(q, a, d, alpha, theta, np.identity(4))
 
         # TCP offset should affect position but not rotation
         assert not np.allclose(T_with_tcp[:3, 3], T_no_tcp[:3, 3])
@@ -108,14 +108,14 @@ class TestForwardKinematics:
 
     def test_fk_output_is_homogeneous_matrix(self):
         """Test that FK output is a valid homogeneous transformation matrix."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
         tcp = np.identity(4)
 
-        T = fk(q, d, r, alpha, theta, tcp)
+        T = fk(q, a, d, alpha, theta, tcp)
 
         # Check structure
         np.testing.assert_array_almost_equal(T[3, :], [0, 0, 0, 1])
@@ -126,8 +126,8 @@ class TestForwardKinematics:
 
     def test_fk_continuity(self):
         """Test FK continuity with small joint angle changes."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         tcp = np.identity(4)
@@ -135,8 +135,8 @@ class TestForwardKinematics:
         q1 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         q2 = q1 + 0.001 * np.ones(6)  # Small perturbation
 
-        T1 = fk(q1, d, r, alpha, theta, tcp)
-        T2 = fk(q2, d, r, alpha, theta, tcp)
+        T1 = fk(q1, a, d, alpha, theta, tcp)
+        T2 = fk(q2, a, d, alpha, theta, tcp)
 
         # End-effector positions should be close
         dist = np.linalg.norm(T1[:3, 3] - T2[:3, 3])
@@ -148,27 +148,27 @@ class TestJacobian:
 
     def test_jacobian_shape(self):
         """Test Jacobian matrix has correct shape."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
         tcp = np.identity(4)
 
-        J = get_jacobian(q, d, r, alpha, theta, tcp)
+        J = get_jacobian(q, a, d, alpha, theta, tcp)
 
         assert J.shape == (6, 6)
 
     def test_jacobian_numerical_consistency(self):
         """Test Jacobian by numerical differentiation."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
         tcp = np.identity(4)
 
-        J = get_jacobian(q, d, r, alpha, theta, tcp)
+        J = get_jacobian(q, a, d, alpha, theta, tcp)
         delta = 1e-6
 
         # Numerical Jacobian for position part (first 3 rows)
@@ -179,8 +179,8 @@ class TestJacobian:
             q_minus = q.copy()
             q_minus[i] -= delta
 
-            T_plus = fk(q_plus, d, r, alpha, theta, tcp)
-            T_minus = fk(q_minus, d, r, alpha, theta, tcp)
+            T_plus = fk(q_plus, a, d, alpha, theta, tcp)
+            T_minus = fk(q_minus, a, d, alpha, theta, tcp)
 
             J_num[:, i] = (T_plus[:3, 3] - T_minus[:3, 3]) / (2 * delta)
 
@@ -189,8 +189,8 @@ class TestJacobian:
 
     def test_jacobian_with_tcp_offset(self):
         """Test Jacobian computation with TCP offset."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
@@ -199,8 +199,8 @@ class TestJacobian:
         tcp_with_offset = np.identity(4)
         tcp_with_offset[0, 3] = 0.1
 
-        J_no_offset = get_jacobian(q, d, r, alpha, theta, tcp_no_offset)
-        J_with_offset = get_jacobian(q, d, r, alpha, theta, tcp_with_offset)
+        J_no_offset = get_jacobian(q, a, d, alpha, theta, tcp_no_offset)
+        J_with_offset = get_jacobian(q, a, d, alpha, theta, tcp_with_offset)
 
         # Jacobians should be different with different TCP
         assert not np.allclose(J_no_offset, J_with_offset)
@@ -215,8 +215,8 @@ class TestInverseKinematics:
         Note: IK requires initial guess close to solution (typical in robotics).
         Starting from zero may not converge to distant targets.
         """
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
@@ -225,15 +225,15 @@ class TestInverseKinematics:
 
         # First, compute FK for a known configuration
         q_target = np.array([0.2, 0.3, -0.2, 0.1, -0.1, 0.15])
-        T_target = fk(q_target, d, r, alpha, theta, tcp)
+        T_target = fk(q_target, a, d, alpha, theta, tcp)
 
         # Start from near the target (offset by small perturbation)
         q_init = q_target + 0.1 * np.ones(6)
         success, q_solution = ik(
             T_target,
             q_init,
+            a,
             d,
-            r,
             alpha,
             theta,
             tcp,
@@ -246,15 +246,15 @@ class TestInverseKinematics:
 
         assert success
         # Verify solution by forward kinematics
-        T_verify = fk(q_solution, d, r, alpha, theta, tcp)
+        T_verify = fk(q_solution, a, d, alpha, theta, tcp)
         np.testing.assert_array_almost_equal(
             T_target[:3, 3], T_verify[:3, 3], decimal=4
         )
 
     def test_ik_returns_valid_joint_limits(self):
         """Test that IK solution respects joint limits."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi / 2] * 6)
@@ -263,14 +263,14 @@ class TestInverseKinematics:
 
         # Target within reachable workspace
         q_target = np.array([0.1, 0.1, -0.1, 0.05, -0.05, 0.1])
-        T_target = fk(q_target, d, r, alpha, theta, tcp)
+        T_target = fk(q_target, a, d, alpha, theta, tcp)
 
         q_init = np.zeros(6)
         success, q_solution = ik(
             T_target,
             q_init,
+            a,
             d,
-            r,
             alpha,
             theta,
             tcp,
@@ -285,8 +285,8 @@ class TestInverseKinematics:
 
     def test_ik_various_initial_guesses(self):
         """Test IK with various initial guesses."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
@@ -294,7 +294,7 @@ class TestInverseKinematics:
         tcp = np.identity(4)
 
         q_target = np.array([0.2, 0.3, -0.2, 0.1, -0.1, 0.15])
-        T_target = fk(q_target, d, r, alpha, theta, tcp)
+        T_target = fk(q_target, a, d, alpha, theta, tcp)
 
         # Test with different initial guesses
         initial_guesses = [
@@ -307,8 +307,8 @@ class TestInverseKinematics:
             success, q_solution = ik(
                 T_target,
                 q_init,
+                a,
                 d,
-                r,
                 alpha,
                 theta,
                 tcp,
@@ -318,7 +318,7 @@ class TestInverseKinematics:
             )
 
             if success:
-                T_verify = fk(q_solution, d, r, alpha, theta, tcp)
+                T_verify = fk(q_solution, a, d, alpha, theta, tcp)
                 np.testing.assert_array_almost_equal(
                     T_target[:3, 3], T_verify[:3, 3], decimal=3
                 )
@@ -329,8 +329,8 @@ class TestGravityTorque:
 
     def test_gravity_torque_shape(self):
         """Test gravity torque output shape."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -339,14 +339,14 @@ class TestGravityTorque:
         masses = np.array([5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.5])
         cog = np.zeros((7, 3))
 
-        tau = get_torque_gravity(q, d, r, alpha, theta, tcp, masses, cog)
+        tau = get_torque_gravity(q, a, d, alpha, theta, tcp, masses, cog)
 
         assert tau.shape == (6,)
 
     def test_gravity_torque_zero_gravity_cog(self):
         """Test gravity torque with zero COG."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -355,15 +355,15 @@ class TestGravityTorque:
         masses = np.array([5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.5])
         cog = np.zeros((7, 3))  # All COG at origin
 
-        tau = get_torque_gravity(q, d, r, alpha, theta, tcp, masses, cog)
+        tau = get_torque_gravity(q, a, d, alpha, theta, tcp, masses, cog)
 
         # With all COG at origin, torques should be very small
         np.testing.assert_array_almost_equal(tau, np.zeros(6), decimal=5)
 
     def test_gravity_torque_with_masses(self):
         """Test gravity torque computation with realistic masses."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -382,7 +382,7 @@ class TestGravityTorque:
             ]
         )
 
-        tau = get_torque_gravity(q, d, r, alpha, theta, tcp, masses, cog)
+        tau = get_torque_gravity(q, a, d, alpha, theta, tcp, masses, cog)
 
         assert tau.shape == (6,)
         # Should be finite values
@@ -394,15 +394,15 @@ class TestComputeForce:
 
     def test_compute_force_shape(self):
         """Test force output shape."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
         tcp = np.identity(4)
         tau = np.array([1.0, 1.5, -0.5, 0.2, -0.1, 0.3])
 
-        force = compute_force(q, d, r, alpha, theta, tcp, tau)
+        force = compute_force(q, a, d, alpha, theta, tcp, tau)
 
         assert force.shape == (6,)
 
@@ -411,8 +411,8 @@ class TestComputeForce:
 
         Note: Uses non-singular configuration to avoid Jacobian singularities.
         """
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         # Use non-singular configuration (not all zeros)
@@ -432,8 +432,8 @@ class TestComputeForce:
             ]
         )
 
-        tau_gravity = get_torque_gravity(q, d, r, alpha, theta, tcp, masses, cog)
-        force = compute_force(q, d, r, alpha, theta, tcp, tau_gravity)
+        tau_gravity = get_torque_gravity(q, a, d, alpha, theta, tcp, masses, cog)
+        force = compute_force(q, a, d, alpha, theta, tcp, tau_gravity)
 
         assert force.shape == (6,)
         assert np.all(np.isfinite(force))

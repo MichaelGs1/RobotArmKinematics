@@ -4,7 +4,7 @@ from numba import njit
 
 @njit(cache=True)
 def dh_mat(
-    d: np.ndarray, r: np.ndarray, alpha: np.ndarray, theta: np.ndarray
+    a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
 ) -> np.ndarray:
     """Compute a homogeneous transformation matrix using Denavit-Hartenberg (Khalil) parameters.
 
@@ -12,10 +12,10 @@ def dh_mat(
     parameters. Used for building kinematic chains in robotic manipulators.
 
     Args:
-        d: Translation along z-axis (m).
-        r: Translation along x-axis (m).
-        alpha: Rotation around x-axis (rad).
-        theta: Rotation around z-axis (rad).
+        a: Translation of zi-1 to zi along xi-1 (m).
+        d: Translation of xi-1 to xi along zi-1 (m).
+        alpha: Rotation of zi-1 to zi around xi-1 (rad).
+        theta: Rotation of xi-1 to xi around zi (rad).
 
     Returns:
         4x4 homogeneous transformation matrix.
@@ -32,9 +32,9 @@ def dh_mat(
     mat[1, 2] = -np.sin(alpha)
     mat[2, 2] = np.cos(alpha)
 
-    mat[0, 3] = d
-    mat[1, 3] = -r * np.sin(alpha)
-    mat[2, 3] = r * np.cos(alpha)
+    mat[0, 3] = a
+    mat[1, 3] = -d * np.sin(alpha)
+    mat[2, 3] = d * np.cos(alpha)
 
     return mat
 

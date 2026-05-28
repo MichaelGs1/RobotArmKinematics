@@ -39,8 +39,8 @@ def main() -> None:
     q = np.deg2rad(np.array([0, 0, -90, 0, -90, 180]))
     list_transforms = get_dh_mat(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
     )
@@ -49,8 +49,8 @@ def main() -> None:
         # 2. Calculer la pose initiale avec fk
         T06 = fk(
             q,
+            config.parameter_a,
             config.parameter_d,
-            config.parameter_r,
             config.parameter_alpha,
             config.parameter_theta,
             config.parameter_tcp,
@@ -77,8 +77,8 @@ def main() -> None:
             res, q_target = ik(
                 T_test,
                 q,
+                config.parameter_a,
                 config.parameter_d,
-                config.parameter_r,
                 config.parameter_alpha,
                 config.parameter_theta,
                 config.parameter_tcp,
@@ -92,8 +92,8 @@ def main() -> None:
             # 6. Calculer T_target = fk(q_target, ...)
             T_target = fk(
                 q_target,
+                config.parameter_a,
                 config.parameter_d,
-                config.parameter_r,
                 config.parameter_alpha,
                 config.parameter_theta,
                 config.parameter_tcp,
@@ -117,8 +117,8 @@ def main() -> None:
 
     torques = get_torque_gravity(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -130,8 +130,8 @@ def main() -> None:
     # test fk
     T06 = fk(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -145,8 +145,8 @@ def main() -> None:
     # test jacobian
     J = get_jacobian(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -161,16 +161,16 @@ def main() -> None:
 
         T0 = fk(
             q,
+            config.parameter_a,
             config.parameter_d,
-            config.parameter_r,
             config.parameter_alpha,
             config.parameter_theta,
             config.parameter_tcp,
         )
         T1 = fk(
             q + dq,
+            config.parameter_a,
             config.parameter_d,
-            config.parameter_r,
             config.parameter_alpha,
             config.parameter_theta,
             config.parameter_tcp,
@@ -213,8 +213,8 @@ def main() -> None:
     res, q_target = ik(
         pose,
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -239,8 +239,8 @@ def main() -> None:
     res, q_target = ik(
         pose,
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -256,8 +256,8 @@ def main() -> None:
     # compute motor torque to compensate gravity
     torques = get_torque_gravity(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,
@@ -267,8 +267,8 @@ def main() -> None:
     print("Torques : ", torques)
     force = compute_force(
         q,
+        config.parameter_a,
         config.parameter_d,
-        config.parameter_r,
         config.parameter_alpha,
         config.parameter_theta,
         config.parameter_tcp,

@@ -13,30 +13,30 @@ class TestBaseConfig:
 
     def test_base_config_initialization(self):
         """Test BaseConfig initialization with required parameters."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(d, r, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
 
         assert config is not None
 
     def test_base_config_parameters_getter(self):
         """Test BaseConfig parameter getters."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(d, r, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
 
         np.testing.assert_array_equal(config.parameter_d, d)
-        np.testing.assert_array_equal(config.parameter_r, r)
+        np.testing.assert_array_equal(config.parameter_a, a)
         np.testing.assert_array_equal(config.parameter_alpha, alpha)
         np.testing.assert_array_equal(config.parameter_theta, theta)
         np.testing.assert_array_equal(config.parameter_qmin, q_min)
@@ -44,14 +44,14 @@ class TestBaseConfig:
 
     def test_base_config_tcp_property(self):
         """Test TCP property getter and setter."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(d, r, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
 
         # Default TCP should be identity
         np.testing.assert_array_equal(config.parameter_tcp, np.identity(4))
@@ -66,8 +66,8 @@ class TestBaseConfig:
 
     def test_base_config_with_optional_parameters(self):
         """Test BaseConfig with optional parameters."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
@@ -75,15 +75,15 @@ class TestBaseConfig:
         q_point_max = np.deg2rad(np.array([150, 150, 180, 225, 225, 225]))
         torque_max = np.array([160, 160, 90, 45, 45, 45])
 
-        config = BaseConfig(d, r, alpha, theta, q_min, q_max, q_point_max, torque_max)
+        config = BaseConfig(a, d, alpha, theta, q_min, q_max, q_point_max, torque_max)
 
         np.testing.assert_array_equal(config.parameter_q_point_max, q_point_max)
         np.testing.assert_array_equal(config.parameter_torque_max, torque_max)
 
     def test_base_config_with_masses_and_cog(self):
         """Test BaseConfig with masses and center of gravity."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
@@ -93,8 +93,8 @@ class TestBaseConfig:
         cog = np.zeros((7, 3))
 
         config = BaseConfig(
+            a,
             d,
-            r,
             alpha,
             theta,
             q_min,
@@ -108,8 +108,8 @@ class TestBaseConfig:
 
     def test_set_tool_shape(self):
         """Test setting tool shape (mass and COG)."""
-        d = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
-        r = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q_min = np.array([-np.pi] * 6)
@@ -129,8 +129,8 @@ class TestBaseConfig:
         )
 
         config = BaseConfig(
+            a,
             d,
-            r,
             alpha,
             theta,
             q_min,
@@ -158,7 +158,7 @@ class TestDoosanM0609Config:
 
         assert config is not None
         assert config.parameter_d.shape == (6,)
-        assert config.parameter_r.shape == (6,)
+        assert config.parameter_a.shape == (6,)
         assert config.parameter_alpha.shape == (6,)
         assert config.parameter_theta.shape == (6,)
 
@@ -179,12 +179,12 @@ class TestDoosanM0609Config:
         config = DoosanM0609Config()
 
         d = config.parameter_d
-        r = config.parameter_r
+        a = config.parameter_a
         alpha = config.parameter_alpha
         theta = config.parameter_theta
 
         assert np.all(np.isfinite(d))
-        assert np.all(np.isfinite(r))
+        assert np.all(np.isfinite(a))
         assert np.all(np.isfinite(alpha))
         assert np.all(np.isfinite(theta))
 
@@ -214,7 +214,7 @@ class TestUR10Config:
 
         assert config is not None
         assert config.parameter_d.shape == (6,)
-        assert config.parameter_r.shape == (6,)
+        assert config.parameter_a.shape == (6,)
         assert config.parameter_alpha.shape == (6,)
         assert config.parameter_theta.shape == (6,)
 
@@ -234,12 +234,12 @@ class TestUR10Config:
         config = UR10Config()
 
         d = config.parameter_d
-        r = config.parameter_r
+        a = config.parameter_a
         alpha = config.parameter_alpha
         theta = config.parameter_theta
 
         assert np.all(np.isfinite(d))
-        assert np.all(np.isfinite(r))
+        assert np.all(np.isfinite(a))
         assert np.all(np.isfinite(alpha))
         assert np.all(np.isfinite(theta))
 
@@ -253,7 +253,7 @@ class TestUR20Config:
 
         assert config is not None
         assert config.parameter_d.shape == (6,)
-        assert config.parameter_r.shape == (6,)
+        assert config.parameter_a.shape == (6,)
         assert config.parameter_alpha.shape == (6,)
         assert config.parameter_theta.shape == (6,)
 
@@ -273,12 +273,12 @@ class TestUR20Config:
         config = UR20Config()
 
         d = config.parameter_d
-        r = config.parameter_r
+        a = config.parameter_a
         alpha = config.parameter_alpha
         theta = config.parameter_theta
 
         assert np.all(np.isfinite(d))
-        assert np.all(np.isfinite(r))
+        assert np.all(np.isfinite(a))
         assert np.all(np.isfinite(alpha))
         assert np.all(np.isfinite(theta))
 
@@ -294,10 +294,10 @@ class TestConfigComparison:
 
         # At least some parameters should differ
         assert not np.allclose(doosan.parameter_d, ur10.parameter_d) or not np.allclose(
-            doosan.parameter_r, ur10.parameter_r
+            doosan.parameter_a, ur10.parameter_a
         )
         assert not np.allclose(ur10.parameter_d, ur20.parameter_d) or not np.allclose(
-            ur10.parameter_r, ur20.parameter_r
+            ur10.parameter_a, ur20.parameter_a
         )
 
     def test_all_configs_have_6_dof(self):
@@ -310,7 +310,7 @@ class TestConfigComparison:
 
         for config in configs:
             assert len(config.parameter_d) == 6
-            assert len(config.parameter_r) == 6
+            assert len(config.parameter_a) == 6
             assert len(config.parameter_alpha) == 6
             assert len(config.parameter_theta) == 6
             assert len(config.parameter_qmin) == 6

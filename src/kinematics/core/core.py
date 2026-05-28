@@ -6,7 +6,7 @@ from kinematics.utils.utils_compute import dh_mat, matrix_to_rotvect
 
 @njit(cache=True)
 def get_dh_mat(
-    q: np.ndarray, d: np.ndarray, r: np.ndarray, alpha: np.ndarray, theta: np.ndarray
+    q: np.ndarray, a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Compute homogeneous transformation matrices for all 6 joints using Denavit-Hartenberg parameters.
 
@@ -15,20 +15,20 @@ def get_dh_mat(
 
     Args:
         q: Joint angles (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
 
     Returns:
         Tuple of 6 homogeneous transformation matrices (4x4) from base to each joint frame.
     """
-    T01 = dh_mat(d[0], r[0], alpha[0], theta[0] + q[0])
-    T12 = dh_mat(d[1], r[1], alpha[1], theta[1] + q[1])
-    T23 = dh_mat(d[2], r[2], alpha[2], theta[2] + q[2])
-    T34 = dh_mat(d[3], r[3], alpha[3], theta[3] + q[3])
-    T45 = dh_mat(d[4], r[4], alpha[4], theta[4] + q[4])
-    T56 = dh_mat(d[5], r[5], alpha[5], theta[5] + q[5])
+    T01 = dh_mat(a[0], d[0], alpha[0], theta[0] + q[0])
+    T12 = dh_mat(a[1], d[1], alpha[1], theta[1] + q[1])
+    T23 = dh_mat(a[2], d[2], alpha[2], theta[2] + q[2])
+    T34 = dh_mat(a[3], d[3], alpha[3], theta[3] + q[3])
+    T45 = dh_mat(a[4], d[4], alpha[4], theta[4] + q[4])
+    T56 = dh_mat(a[5], d[5], alpha[5], theta[5] + q[5])
 
     T02 = T01 @ T12
     T03 = T02 @ T23
@@ -42,8 +42,8 @@ def get_dh_mat(
 @njit(cache=True)
 def get_jacobian(
     q: np.ndarray,
+    a: np.ndarray,
     d: np.ndarray,
-    r: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
     tcp: np.ndarray,
@@ -55,8 +55,8 @@ def get_jacobian(
 
     Args:
         q: Joint angles (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
         tcp: Tool Center Point transformation matrix (4x4).
@@ -64,7 +64,7 @@ def get_jacobian(
     Returns:
         6x6 Jacobian matrix (first 3 rows for linear velocity, last 3 for angular).
     """
-    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, d, r, alpha, theta)
+    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
     T0tool = T06 @ tcp
 
     T_array = np.zeros((6, 4, 4))
@@ -90,8 +90,8 @@ def get_jacobian(
 @njit(cache=True)
 def get_torque_gravity(
     q: np.ndarray,
+    a: np.ndarray,
     d: np.ndarray,
-    r: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
     tcp: np.ndarray,
@@ -105,8 +105,8 @@ def get_torque_gravity(
 
     Args:
         q: Joint angles (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
         tcp: Tool Center Point transformation matrix (4x4).
@@ -125,7 +125,7 @@ def get_torque_gravity(
     n = len(q)
 
     # compute jacobian at center of gravity
-    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, d, r, alpha, theta)
+    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
     T0tool = T06 @ tcp
 
     T_array = np.zeros((6, 4, 4))
@@ -174,8 +174,8 @@ def get_torque_gravity(
 @njit(cache=True)
 def compute_force(
     q: np.ndarray,
+    a: np.ndarray,
     d: np.ndarray,
-    r: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
     tcp: np.ndarray,
@@ -188,8 +188,8 @@ def compute_force(
 
     Args:
         q: Joint angles (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
         tcp: Tool Center Point transformation matrix (4x4).
@@ -198,7 +198,7 @@ def compute_force(
     Returns:
         End-effector force/moment vector (3 forces + 3 moments), shape (6,).
     """
-    J = get_jacobian(q, d, r, alpha, theta, tcp)
+    J = get_jacobian(q, a, d, alpha, theta, tcp)
     result: np.ndarray = np.linalg.inv(J.T) @ np.ascontiguousarray(tau)
     return result
 
@@ -206,8 +206,8 @@ def compute_force(
 @njit(cache=True)
 def fk(
     q: np.ndarray,
+    a: np.ndarray,
     d: np.ndarray,
-    r: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
     tcp: np.ndarray,
@@ -219,8 +219,8 @@ def fk(
 
     Args:
         q: Joint angles (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
         tcp: Tool Center Point transformation matrix (4x4).
@@ -228,7 +228,7 @@ def fk(
     Returns:
         Homogeneous transformation matrix (4x4) from base to tool frame.
     """
-    _, _, _, _, _, T06 = get_dh_mat(q, d, r, alpha, theta)
+    _, _, _, _, _, T06 = get_dh_mat(q, a, d, alpha, theta)
     T0tool: np.ndarray = T06 @ tcp
     return T0tool
 
@@ -237,8 +237,8 @@ def fk(
 def ik(
     target_pose_matrix: np.ndarray,
     q_init: np.ndarray,
+    a: np.ndarray,
     d: np.ndarray,
-    r: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
     tcp: np.ndarray,
@@ -257,8 +257,8 @@ def ik(
     Args:
         target_pose_matrix: Desired end-effector homogeneous transformation (4x4).
         q_init: Initial joint angle guess (rad), shape (6,).
+        a: Denavit-Hartenberg a parameters, shape (6,).
         d: Denavit-Hartenberg d parameters, shape (6,).
-        r: Denavit-Hartenberg r parameters, shape (6,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
         tcp: Tool Center Point transformation matrix (4x4).
@@ -278,7 +278,7 @@ def ik(
     find_solution = False
 
     for i in range(max_iter):
-        T = fk(q, d, r, alpha, theta, tcp)
+        T = fk(q, a, d, alpha, theta, tcp)
         pos_current = np.ascontiguousarray(T[:3, 3])
         rot_current = np.ascontiguousarray(T[:3, :3])
         # print(T)
@@ -301,7 +301,7 @@ def ik(
 
         # --- correction via pseudo-inverse ---
         error = np.hstack((e_pos, e_orient))  # 6x1
-        J = get_jacobian(q, d, r, alpha, theta, tcp)  # 6x6
+        J = get_jacobian(q, a, d, alpha, theta, tcp)  # 6x6
 
         dq = alpha_fix * np.dot(np.linalg.pinv(J), error)
         q += dq

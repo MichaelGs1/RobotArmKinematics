@@ -47,5 +47,5 @@ per-file-ignores = { "tests/*" = ["F401", "N802", "N803", "N806"] }
 
 
 [scripts]
-lint = "ruff check src/ tests/"
-format = "ruff format src/ tests/"  # Si tu veux aussi formater le code
+lint = "ruff check src/ tests/ examples"
+format = "ruff format src/ tests/ examples" 
