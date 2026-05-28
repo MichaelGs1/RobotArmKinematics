@@ -268,15 +268,13 @@ All core computations use Numba JIT compilation for high performance:
 - `numpy` - Numerical computations
 - `numba` - JIT compilation for performance
 - `matplotlib` - 3D visualization
+- `scipy` - Testing
+- `tqdm` - Visualization
 
 ## 📄 License
 
-[Add your license here]
+MIT
 
 ## 👤 Authors
 
-[Add author information here]
-
-## 📞 Support
-
-For issues, questions, or contributions, please visit the project repository.
+Michaël Gross
