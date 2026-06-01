@@ -7,36 +7,37 @@ from kinematics.utils.utils_compute import dh_mat, matrix_to_rotvect
 @njit(cache=True)
 def get_dh_mat(
     q: np.ndarray, a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Compute homogeneous transformation matrices for all 6 joints using Denavit-Hartenberg parameters.
+) -> np.ndarray:
+    """Compute homogeneous transformation matrices for all n joints using Denavit-Hartenberg parameters.
 
-    Calculates the transformation matrices from frame 0 to each joint frame for a 6-DOF robot
+    Calculates the transformation matrices from frame 0 to each joint frame for a n-DOF robot arm
     using the modified Denavit-Hartenberg (Khalil) convention.
 
     Args:
-        q: Joint angles (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q: Joint angles (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
 
     Returns:
-        Tuple of 6 homogeneous transformation matrices (4x4) from base to each joint frame.
+        Tuple of n homogeneous transformation matrices (4x4) from base to each joint frame.
     """
-    T01 = dh_mat(a[0], d[0], alpha[0], theta[0] + q[0])
-    T12 = dh_mat(a[1], d[1], alpha[1], theta[1] + q[1])
-    T23 = dh_mat(a[2], d[2], alpha[2], theta[2] + q[2])
-    T34 = dh_mat(a[3], d[3], alpha[3], theta[3] + q[3])
-    T45 = dh_mat(a[4], d[4], alpha[4], theta[4] + q[4])
-    T56 = dh_mat(a[5], d[5], alpha[5], theta[5] + q[5])
+    assert a.shape[0] == q.shape[0]
 
-    T02 = T01 @ T12
-    T03 = T02 @ T23
-    T04 = T03 @ T34
-    T05 = T04 @ T45
-    T06 = T05 @ T56
+    # Compute T(i)(i+1)
+    transforms_i_i_next = np.zeros((q.shape[0], 4, 4))
+    for i in range(q.shape[0]):
+        t_i_i_next = dh_mat(a[i], d[i], alpha[i], theta[i] + q[i])
+        transforms_i_i_next[i] = t_i_i_next
 
-    return T01, T02, T03, T04, T05, T06
+    # Compute T(0)(i)
+    transforms_0_n = np.zeros((q.shape[0], 4, 4))
+    transforms_0_n[0] = transforms_i_i_next[0]
+    for i in range(1, q.shape[0]):
+        transforms_0_n[i] = transforms_0_n[i - 1] @ transforms_i_i_next[i]
+
+    return transforms_0_n
 
 
 @njit(cache=True)
@@ -48,35 +49,27 @@ def get_jacobian(
     theta: np.ndarray,
     tcp: np.ndarray,
 ) -> np.ndarray:
-    """Compute the 6x6 Jacobian matrix for the robot end-effector.
+    """Compute the 6x7 Jacobian matrix for the robot end-effector.
 
     Calculates the analytical Jacobian relating joint velocities to end-effector
     linear and angular velocities using the geometric method.
 
     Args:
-        q: Joint angles (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q: Joint angles (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
         tcp: Tool Center Point transformation matrix (4x4).
 
     Returns:
         6x6 Jacobian matrix (first 3 rows for linear velocity, last 3 for angular).
     """
-    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
-    T0tool = T06 @ tcp
+    T_array = get_dh_mat(q, a, d, alpha, theta)
+    T0tool = T_array[-1] @ tcp
 
-    T_array = np.zeros((6, 4, 4))
-    T_array[0, :, :] = T01
-    T_array[1, :, :] = T02
-    T_array[2, :, :] = T03
-    T_array[3, :, :] = T04
-    T_array[4, :, :] = T05
-    T_array[5, :, :] = T06
-
-    J = np.zeros((6, 6))
-    for i in range(6):
+    J = np.zeros((6, T_array.shape[0]))
+    for i in range(T_array.shape[0]):
         T = T_array[i]
         z = T[:3, 2]
         o = T[:3, 3]
@@ -125,16 +118,8 @@ def get_torque_gravity(
     n = len(q)
 
     # compute jacobian at center of gravity
-    T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
-    T0tool = T06 @ tcp
-
-    T_array = np.zeros((6, 4, 4))
-    T_array[0, :, :] = T01
-    T_array[1, :, :] = T02
-    T_array[2, :, :] = T03
-    T_array[3, :, :] = T04
-    T_array[4, :, :] = T05
-    T_array[5, :, :] = T06
+    T_array = get_dh_mat(q, a, d, alpha, theta)
+    T0tool = T_array[-1] @ tcp
 
     # --- Segment contribution ---
     n = 6
@@ -153,7 +138,7 @@ def get_torque_gravity(
             tau[i] += contrib_link
 
     # --- TCP contribution ---
-    p_tool_com = (T06 @ np.append(cog[-1], 1))[:3]
+    p_tool_com = (T_array[-1] @ np.append(cog[-1], 1))[:3]
     F_tool = masses[-1] * g_vec
 
     for i in range(n):
@@ -228,8 +213,8 @@ def fk(
     Returns:
         Homogeneous transformation matrix (4x4) from base to tool frame.
     """
-    _, _, _, _, _, T06 = get_dh_mat(q, a, d, alpha, theta)
-    T0tool: np.ndarray = T06 @ tcp
+    transforms = get_dh_mat(q, a, d, alpha, theta)
+    T0tool: np.ndarray = transforms[-1] @ tcp
     return T0tool
 
 

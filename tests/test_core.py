@@ -24,18 +24,13 @@ class TestGetDhMat:
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
+        transforms = get_dh_mat(q, a, d, alpha, theta)
 
         # All should be 4x4 matrices
-        assert T01.shape == (4, 4)
-        assert T02.shape == (4, 4)
-        assert T03.shape == (4, 4)
-        assert T04.shape == (4, 4)
-        assert T05.shape == (4, 4)
-        assert T06.shape == (4, 4)
+        assert transforms.shape[1:] == (4, 4)
 
         # All should be homogeneous transformation matrices
-        for T in [T01, T02, T03, T04, T05, T06]:
+        for T in transforms:
             np.testing.assert_array_almost_equal(T[3, :], [0, 0, 0, 1])
 
     def test_chained_transforms_structure(self):
@@ -46,11 +41,11 @@ class TestGetDhMat:
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
         q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
 
-        T01, T02, T03, T04, T05, T06 = get_dh_mat(q, a, d, alpha, theta)
+        transforms = get_dh_mat(q, a, d, alpha, theta)
 
         # T02 should be approximately T01 @ T12
         # We can test that determinants are 1 (proper rotations)
-        for T in [T01, T02, T03, T04, T05, T06]:
+        for T in transforms:
             R = T[:3, :3]
             assert np.isclose(np.linalg.det(R), 1.0, atol=1e-5)
 
@@ -64,11 +59,11 @@ class TestGetDhMat:
         q1 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         q2 = np.array([np.pi / 4, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-        _, _, _, _, _, T06_q1 = get_dh_mat(q1, a, d, alpha, theta)
-        _, _, _, _, _, T06_q2 = get_dh_mat(q2, a, d, alpha, theta)
+        transform_q1 = get_dh_mat(q1, a, d, alpha, theta)
+        transform_q2 = get_dh_mat(q2, a, d, alpha, theta)
 
         # Different joint angles should produce different end-effector poses
-        assert not np.allclose(T06_q1, T06_q2)
+        assert not np.allclose(transform_q1[-1], transform_q2[-1])
 
 
 class TestForwardKinematics:

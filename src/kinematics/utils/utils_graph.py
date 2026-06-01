@@ -4,27 +4,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def get_joint_positions(list_transforms: list[np.ndarray]) -> list[np.ndarray]:
+def get_joint_positions(transforms: np.ndarray) -> np.ndarray:
     """Extract 3D positions of all robot joints from transformation matrices.
 
     Args:
-        list_transforms: List of 6 homogeneous transformation matrices (4x4),
+        transforms: Array of n homogeneous transformation matrices (4x4),
                         one for each joint frame.
 
     Returns:
-        List of 7 3D position vectors: base origin plus positions of all 6 joints.
+        Array of n+1 3D position vectors: base origin plus positions of all n joints.
     """
-    t01, t02, t03, t04, t05, t06 = list_transforms
-    # La position de chaque articulation est donnée par T[i][:3, 3]
-    joint_positions = [
-        np.array([0, 0, 0]),  # Base (origine)
-        t01[:3, 3],
-        t02[:3, 3],
-        t03[:3, 3],
-        t04[:3, 3],
-        t05[:3, 3],
-        t06[:3, 3],  # Extrémité du robot
-    ]
+    joint_positions = np.zeros((transforms.shape[0] + 1, 3))  # i : 0 => Base(0,0,0)
+    for i in range(transforms.shape[0]):
+        joint_positions[i + 1] = transforms[i][:3, 3]
+
     return joint_positions
 
 
@@ -62,14 +55,14 @@ def create_graph(max_dim: float = 1.2, title: str = "Workspace") -> Any:
     return ax
 
 
-def plot_robot_3d(ax: Any, list_transforms: list[np.ndarray]) -> None:
+def plot_robot_3d(ax: Any, transforms: np.ndarray) -> None:
     """Plot the robot skeleton as connected line segments with joint markers.
 
     Args:
         ax: matplotlib 3D axis object.
-        list_transforms: List of 6 homogeneous transformation matrices (4x4).
+        transforms: List of n homogeneous transformation matrices (4x4).
     """
-    joint_positions = get_joint_positions(list_transforms)
+    joint_positions = get_joint_positions(transforms)
 
     # Tracer les segments du robot
     for i in range(len(joint_positions) - 1):
@@ -87,7 +80,7 @@ def plot_robot_3d(ax: Any, list_transforms: list[np.ndarray]) -> None:
         ax.text(pos[0], pos[1], pos[2], f"Joint {i}", fontsize=10)
 
 
-def plot_tcp(ax: Any, t06: np.ndarray, scale: float = 0.25) -> None:
+def plot_tcp(ax: Any, t_end: np.ndarray, scale: float = 0.25) -> None:
     """Plot the tool center point reference frame with RGB axes.
 
     Displays red (X), green (Y), and blue (Z) arrows representing the end-effector
@@ -95,11 +88,11 @@ def plot_tcp(ax: Any, t06: np.ndarray, scale: float = 0.25) -> None:
 
     Args:
         ax: matplotlib 3D axis object.
-        t06: End-effector homogeneous transformation matrix (4x4).
+        t_end: End-effector homogeneous transformation matrix (4x4).
         scale: Arrow length scale factor, default 0.25.
     """
-    position = t06[:3, 3].T
-    rot = t06[:3, :3]
+    position = t_end[:3, 3].T
+    rot = t_end[:3, :3]
     rx = rot[:3, 0].T
     ry = rot[:3, 1].T
     rz = rot[:3, 2].T
@@ -160,7 +153,7 @@ def plot_frame(
 
 def plot_ellipsoid(
     a: np.ndarray,
-    t06: np.ndarray,
+    t_end: np.ndarray,
     ax: Any,
     color: str = "b",
     label: str | None = None,
@@ -173,7 +166,7 @@ def plot_ellipsoid(
 
     Args:
         a: 3x3 ellipsoid matrix (typically Jacobian inverse or similar).
-        t06: End-effector homogeneous transformation matrix (4x4).
+        t_end: End-effector homogeneous transformation matrix (4x4).
         ax: matplotlib 3D axis object.
         color: Color for the ellipsoid wireframe, default "b".
         label: Optional legend label for the ellipsoid.
@@ -181,7 +174,7 @@ def plot_ellipsoid(
     """
     a = np.linalg.inv(a)
     # Position de l'effecteur final
-    position = t06[:3, 3]
+    position = t_end[:3, 3]
 
     # Décomposition spectrale
     eigvals, eigvecs = np.linalg.eigh(a)

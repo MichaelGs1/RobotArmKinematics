@@ -79,6 +79,13 @@ class BaseConfig(ABC):
             cog (np.ndarray | None, optional): Centers of gravity of the robot links. Defaults to None.
             tcp (np.ndarray, optional): Tool Center Point transformation matrix. Defaults to identity matrix.
         """
+        assert a.shape[0] == d.shape[0]
+        assert a.shape[0] == alpha.shape[0]
+        assert a.shape[0] == theta.shape[0]
+
+        assert a.shape[0] == qmin.shape[0]
+        assert a.shape[0] == qmax.shape[0]
+
         self._parameter_a: np.ndarray = a
         self._parameter_d: np.ndarray = d
         self._parameter_alpha: np.ndarray = alpha

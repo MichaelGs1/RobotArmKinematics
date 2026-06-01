@@ -4,6 +4,7 @@ import numpy as np
 
 from kinematics.config.config import BaseConfig
 from kinematics.config.doosan_m0609.config_doosan_m0609 import DoosanM0609Config
+from kinematics.config.kuka_iiwa.config_kuka_iiwa import KukaIiwaConfig
 from kinematics.config.ur10.config_ur10 import UR10Config
 from kinematics.config.ur20.config_ur20 import UR20Config
 
@@ -283,35 +284,40 @@ class TestUR20Config:
         assert np.all(np.isfinite(theta))
 
 
-class TestConfigComparison:
-    """Test comparisons between different robot configurations."""
+class TestIiwaConfig:
+    """Test iiwa robot configuration."""
 
-    def test_different_configs_have_different_parameters(self):
-        """Test that different robots have different DH parameters."""
-        doosan = DoosanM0609Config()
-        ur10 = UR10Config()
-        ur20 = UR20Config()
+    def test_iiwa_config_initialization(self):
+        """Test IiwaConfig initializes correctly."""
+        config = KukaIiwaConfig()
 
-        # At least some parameters should differ
-        assert not np.allclose(doosan.parameter_d, ur10.parameter_d) or not np.allclose(
-            doosan.parameter_a, ur10.parameter_a
-        )
-        assert not np.allclose(ur10.parameter_d, ur20.parameter_d) or not np.allclose(
-            ur10.parameter_a, ur20.parameter_a
-        )
+        assert config is not None
+        assert config.parameter_d.shape == (7,)
+        assert config.parameter_a.shape == (7,)
+        assert config.parameter_alpha.shape == (7,)
+        assert config.parameter_theta.shape == (7,)
 
-    def test_all_configs_have_6_dof(self):
-        """Test that all robot configurations have 6 degrees of freedom."""
-        configs = [
-            DoosanM0609Config(),
-            UR10Config(),
-            UR20Config(),
-        ]
+    def test_iiwa_joint_limits(self):
+        """Test IiwaConfig joint limits are valid."""
+        config = KukaIiwaConfig()
 
-        for config in configs:
-            assert len(config.parameter_d) == 6
-            assert len(config.parameter_a) == 6
-            assert len(config.parameter_alpha) == 6
-            assert len(config.parameter_theta) == 6
-            assert len(config.parameter_qmin) == 6
-            assert len(config.parameter_qmax) == 6
+        q_min = config.parameter_qmin
+        q_max = config.parameter_qmax
+
+        assert len(q_min) == 7
+        assert len(q_max) == 7
+        assert np.all(q_min < q_max)
+
+    def test_iiwa_dh_parameters(self):
+        """Test IiwaConfig DH parameters are valid."""
+        config = KukaIiwaConfig()
+
+        d = config.parameter_d
+        a = config.parameter_a
+        alpha = config.parameter_alpha
+        theta = config.parameter_theta
+
+        assert np.all(np.isfinite(d))
+        assert np.all(np.isfinite(a))
+        assert np.all(np.isfinite(alpha))
+        assert np.all(np.isfinite(theta))

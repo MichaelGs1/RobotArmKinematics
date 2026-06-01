@@ -1,11 +1,12 @@
 import numpy as np
 
-from kinematics.config.ur20 import UR20Config
+from kinematics.config.kuka_iiwa import KukaIiwaConfig
 from kinematics.utils import dh_mat
 
 
 def main() -> None:
-    config = UR20Config()
+    # config = UR20Config()
+    config = KukaIiwaConfig()
     # config = UR10Config()
     # config = DoosanM0609Config()
     print("DHM parameters :")

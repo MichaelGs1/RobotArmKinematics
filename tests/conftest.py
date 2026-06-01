@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from kinematics.config.doosan_m0609.config_doosan_m0609 import DoosanM0609Config
+from kinematics.config.kuka_iiwa.config_kuka_iiwa import KukaIiwaConfig
 from kinematics.config.ur10.config_ur10 import UR10Config
 from kinematics.config.ur20.config_ur20 import UR20Config
 
@@ -24,6 +25,18 @@ def ur10_robot():
 def ur20_robot():
     """Fixture providing UR20 robot configuration."""
     return UR20Config()
+
+
+@pytest.fixture
+def ur20_robot():
+    """Fixture providing UR20 robot configuration."""
+    return UR20Config()
+
+
+@pytest.fixture
+def iiwa_robot():
+    """Fixture providing UR20 robot configuration."""
+    return iiwa_robot()
 
 
 @pytest.fixture

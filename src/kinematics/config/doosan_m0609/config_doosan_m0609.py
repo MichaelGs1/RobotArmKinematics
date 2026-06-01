@@ -46,10 +46,9 @@ class DoosanM0609Config(BaseConfig):
         )  # com repere base pour config q = 0
 
         # compute cog in link frame
-        t01, t02, t03, t04, t05, t06 = get_dh_mat(
-            np.array([0, 0, 0, 0, 0, 0]), a, d, alpha, theta
-        )
-        array_t = np.array([t01, t02, t03, t04, t05, t06, np.identity(4)])
+        transforms = get_dh_mat(np.array([0, 0, 0, 0, 0, 0]), a, d, alpha, theta)
+        array_t = transforms.copy()
+        array_t = np.append(array_t, [np.identity(4)], axis=0)
         for i in range(cog.shape[0]):
             cog[i] = (np.linalg.inv(array_t[i]) @ np.append(cog[i], 1.0))[:3]
 

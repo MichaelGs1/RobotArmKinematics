@@ -1,6 +1,6 @@
 # 🤖 Kinematics Package
 
-A high-performance Python package for computing **forward and inverse kinematics** of 6-DOF robotic manipulators. Built with speed in mind using Numba JIT compilation.
+A high-performance Python package for computing **forward and inverse kinematics** of N-DOF robotic manipulators. Built with speed in mind using Numba JIT compilation.
 
 ## 📋 Overview
 
@@ -15,7 +15,7 @@ This package provides tools for:
 ## ⚡ Features
 
 - ✅ Fast JIT-compiled core algorithms using Numba
-- ✅ Support for multiple robot configurations (UR10, UR20, Doosan M0609, ...)
+- ✅ Support for multiple robot configurations (UR10, UR20, Doosan M0609, Kuka IIwa, ...)
 - ✅ Denavit-Hartenberg (Khalil) parameterization
 - ✅ IK with both position and orientation constraints
 - ✅ Dynamic analysis with gravity effects
@@ -115,11 +115,13 @@ src/kinematics/
 ├── config/
 │   ├── config.py            # Base configuration class
 │   ├── ur10/
-│   │   └── config_ur10.py   # UR10 robot configuration
+│   │   └── config_ur10.py   # UR10 robot configuration (6-Dof)
 │   ├── ur20/
-│   │   └── config_ur20.py   # UR20 robot configuration
+│   │   └── config_ur20.py   # UR20 robot configuration (6-Dof)
 │   └── doosan_m0609/
-│       └── config_doosan_m0609.py  # Doosan M0609 configuration
+│       └── config_doosan_m0609.py  # Doosan M0609 configuration (6-Dof)
+│   └── kuka_iiwa/
+│       └── config_kuka_iiwa.py  # Kuka iiwa 14 820 configuration (7-Dof)
 └── utils/
     ├── utils_compute.py     # Rotation matrices, conversions
     └── utils_graph.py       # 3D visualization utilities
