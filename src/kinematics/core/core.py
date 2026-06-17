@@ -296,6 +296,70 @@ def ik(
 
 
 @njit(cache=True)
+def compute_force_ellipsoid(J: np.ndarray) -> np.ndarray:
+    """Compute the force ellipsoid matrix
+
+    Args:
+        J (np.ndarray): jacobian matrix (3xn)
+
+    Returns:
+        np.ndarray: ellipsoid matrix (3x3)
+    """
+    Af: np.ndarray = J @ J.T
+    return Af
+
+
+@njit(cache=True)
+def compute_normalize_force_ellipsoid(
+    J: np.ndarray, torque_max: np.ndarray
+) -> np.ndarray:
+    """Compute the force ellipsoid matrix normalized by torque max of the robot
+
+    Args:
+        J (np.ndarray): jacobian matrix (3xn)
+        torque_max (np.ndarray): vector of torque max
+
+    Returns:
+        np.ndarray: ellipsoid matrix (3x3)
+    """
+    Df_inv2 = np.diag(1 / torque_max**2)
+    Af: np.ndarray = J @ Df_inv2 @ J.T
+    return Af
+
+
+@njit(cache=True)
+def compute_velocity_ellipsoid(J: np.ndarray) -> np.ndarray:
+    """Compute the velocity ellipsoid matrix
+
+    Args:
+        J (np.ndarray): jacobian matrix (3xn)
+
+    Returns:
+        np.ndarray: ellipsoid matrix (3x3)
+    """
+    Av = np.linalg.inv(J @ J.T)
+    return Av
+
+
+@njit(cache=True)
+def compute_normalize_velocity_ellipsoid(
+    J: np.ndarray, velocity_max: np.ndarray
+) -> np.ndarray:
+    """_summary_
+
+    Args:
+        J (np.ndarray): jacobian matrix (3xn)
+        velocity_max (np.ndarray):  vector of velocity max
+
+    Returns:
+        np.ndarray: ellipsoid matrix (3x3)
+    """
+    Dq = np.diag(velocity_max)
+    Av = np.linalg.inv(J @ Dq**2 @ J.T)
+    return Av
+
+
+@njit(cache=True)
 def get_amplitude_ellipsoid(A: np.ndarray, dir: np.ndarray) -> float:
     """Compute the amplitude of an ellipsoid along a given direction.
 

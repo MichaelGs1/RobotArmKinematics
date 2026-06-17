@@ -4,7 +4,12 @@ import numpy as np
 
 from kinematics.core.core import (
     compute_force,
+    compute_force_ellipsoid,
+    compute_normalize_force_ellipsoid,
+    compute_normalize_velocity_ellipsoid,
+    compute_velocity_ellipsoid,
     fk,
+    get_amplitude_ellipsoid,
     get_dh_mat,
     get_jacobian,
     get_torque_gravity,
@@ -432,3 +437,52 @@ class TestComputeForce:
 
         assert force.shape == (6,)
         assert np.all(np.isfinite(force))
+
+
+class TestEllipsoid:
+    """Test ellipsoid"""
+
+    def test_shape_ellipsoid(self):
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
+        theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
+        tcp = np.identity(4)
+
+        speed_max = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        torque_max = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+
+        J = get_jacobian(q, a, d, alpha, theta, tcp)
+        J_trans = J[:3, :]
+
+        A = compute_velocity_ellipsoid(J_trans)
+        assert A.shape == (3, 3)
+        A = compute_normalize_velocity_ellipsoid(J_trans, speed_max)
+        assert A.shape == (3, 3)
+
+        A = compute_force_ellipsoid(J_trans)
+        assert A.shape == (3, 3)
+        A = compute_normalize_force_ellipsoid(J_trans, torque_max)
+        assert A.shape == (3, 3)
+
+    def test_shape_amplitude_ellipsoid(self):
+        a = np.array([0.0, 0.0, 0.5, 0.0, 0.0, 0.0])
+        d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
+        alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
+        theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        q = np.array([0.1, 0.2, -0.3, 0.1, -0.2, 0.15])
+        tcp = np.identity(4)
+
+        speed_max = np.array([1, 1, 1, 1, 1, 1])
+        torque_max = np.array([1, 1, 1, 1, 1, 1])
+
+        J = get_jacobian(q, a, d, alpha, theta, tcp)
+        J_rot = J[3:, :]
+
+        A = compute_velocity_ellipsoid(J_rot)
+
+        u = np.array([0, 1, 0])
+        amplitude = get_amplitude_ellipsoid(A, u)
+
+        assert type(amplitude) is float

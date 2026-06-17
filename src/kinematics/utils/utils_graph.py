@@ -187,8 +187,6 @@ def plot_ellipsoid(
 
     # Rayons = sqrt(valeurs propres)
     radii = np.sqrt(eigvals.real) * scale
-    # radii = radii / max(np.sqrt(eigvals.real))
-    # radii = radii * 0.5
 
     # Paramétrisation sphérique
     u = np.linspace(0, 2 * np.pi, 50)
