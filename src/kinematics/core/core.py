@@ -1,13 +1,19 @@
 import numpy as np
-from numba import njit
+from numba import float64, int32, njit
 
-from kinematics.utils.utils_compute import dh_mat, matrix_to_rotvect
+from kinematics.config.config import RepresentationType
+from kinematics.utils.utils_compute import dh_mat, dh_mat_khalil, matrix_to_rotvect
 
 
-@njit(cache=True)
-def get_dh_mat(
-    q: np.ndarray, a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
-) -> np.ndarray:
+@njit((float64[:], float64[:], float64[:], float64[:], float64[:], int32), cache=True)
+def _get_link_matrix_numba(
+    q: np.ndarray,
+    a: np.ndarray,
+    d: np.ndarray,
+    alpha: np.ndarray,
+    theta: np.ndarray,
+    representation_type_value: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute homogeneous transformation matrices for all n joints using Denavit-Hartenberg parameters.
 
     Calculates the transformation matrices from frame 0 to each joint frame for a n-DOF robot arm
@@ -19,37 +25,75 @@ def get_dh_mat(
         d: Denavit-Hartenberg d parameters, shape (n,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
 
     Returns:
-        Tuple of n homogeneous transformation matrices (4x4) from base to each joint frame.
+        tuple[np.ndarray, np.ndarray, np.ndarray]: Array of n homogeneous transformation matrices (4x4) from base to each joint frame, origins of link, axes of link
     """
     assert a.shape[0] == q.shape[0]
+    n = q.shape[0]
 
-    # Compute T(i)(i+1)
-    transforms_i_i_next = np.zeros((q.shape[0], 4, 4))
-    for i in range(q.shape[0]):
-        t_i_i_next = dh_mat(a[i], d[i], alpha[i], theta[i] + q[i])
-        transforms_i_i_next[i] = t_i_i_next
+    origins = np.empty((n, 3), dtype=np.float64)
+    axes = np.empty((n, 3), dtype=np.float64)
 
-    # Compute T(0)(i)
-    transforms_0_n = np.zeros((q.shape[0], 4, 4))
-    transforms_0_n[0] = transforms_i_i_next[0]
-    for i in range(1, q.shape[0]):
-        transforms_0_n[i] = transforms_0_n[i - 1] @ transforms_i_i_next[i]
+    if representation_type_value == RepresentationType.DH.value:
+        # get dh matrixes
+        matrixes = dh_mat(a, d, alpha, theta + q)
 
-    return transforms_0_n
+        origins[0] = np.zeros(3)
+        axes[0] = np.array([0.0, 0.0, 1.0])
+
+        transforms_0_n = np.zeros((q.shape[0], 4, 4), dtype=np.float64)
+        transforms_0_n[0] = matrixes[0]
+        for i in range(1, n):
+            # compute dh frame
+            transforms_0_n[i] = transforms_0_n[i - 1] @ matrixes[i]
+
+            # get origins and axis of joint
+            origins[i] = transforms_0_n[i - 1][:3, 3]
+            axes[i] = transforms_0_n[i - 1][:3, 2]
+
+    else:
+        # get dh khalil matrixes
+        matrixes = dh_mat_khalil(a, d, alpha, theta + q)
+
+        transforms_0_n = np.zeros((q.shape[0], 4, 4), dtype=np.float64)
+        transforms_0_n[0] = matrixes[0]
+        origins[0] = transforms_0_n[0][:3, 3]
+        axes[0] = transforms_0_n[0][:3, 2]
+        for i in range(1, n):
+            # compute dh khalil frame
+            transforms_0_n[i] = transforms_0_n[i - 1] @ matrixes[i]
+
+            # get origins and axis of joint
+            origins[i] = transforms_0_n[i][:3, 3]
+            axes[i] = transforms_0_n[i][:3, 2]
+
+    return transforms_0_n, origins, axes
 
 
-@njit(cache=True)
-def get_jacobian(
+@njit(
+    float64[:, :](
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        int32,
+        float64[:, ::1],
+    ),
+    cache=True,
+)
+def _get_jacobian_numba(
     q: np.ndarray,
     a: np.ndarray,
     d: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
+    representation_type_value: int,
     tcp: np.ndarray,
 ) -> np.ndarray:
-    """Compute the 6x7 Jacobian matrix for the robot end-effector.
+    """Compute the 6xn Jacobian matrix for the robot end-effector.
 
     Calculates the analytical Jacobian relating joint velocities to end-effector
     linear and angular velocities using the geometric method.
@@ -60,19 +104,22 @@ def get_jacobian(
         d: Denavit-Hartenberg d parameters, shape (n,).
         alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
         theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
         tcp: Tool Center Point transformation matrix (4x4).
 
     Returns:
-        6x6 Jacobian matrix (first 3 rows for linear velocity, last 3 for angular).
+        6xn Jacobian matrix (first 3 rows for linear velocity, last 3 for angular).
     """
-    T_array = get_dh_mat(q, a, d, alpha, theta)
-    T0tool = T_array[-1] @ tcp
+    T_array, origins, axes = _get_link_matrix_numba(
+        q, a, d, alpha, theta, representation_type_value
+    )
+    T0tool = np.ascontiguousarray(T_array[-1]) @ tcp
 
     J = np.zeros((6, T_array.shape[0]))
     for i in range(T_array.shape[0]):
         T = T_array[i]
-        z = T[:3, 2]
-        o = T[:3, 3]
+        z = axes[i]
+        o = origins[i]
         v = np.cross(z, T0tool[:3, 3] - o)
         J[:3, i] = v
         J[3:, i] = z
@@ -80,52 +127,68 @@ def get_jacobian(
     return J
 
 
-@njit(cache=True)
-def get_torque_gravity(
+@njit(
+    float64[:](
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        int32,
+        float64[:, ::1],
+        float64[:],
+        float64[:, :],
+    ),
+    cache=True,
+)
+def _get_torque_gravity_numba(
     q: np.ndarray,
     a: np.ndarray,
     d: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
+    representation_type_value: int,
     tcp: np.ndarray,
     masses: np.ndarray,
     cog: np.ndarray,
 ) -> np.ndarray:
-    """Compute gravity compensation torques for all 6 joints.
+    """Compute gravity compensation torques for all n joints.
 
     Calculates the required joint torques to compensate for gravitational forces
     acting on all robot links and the tool. Uses the center of gravity of each segment.
 
     Args:
-        q: Joint angles (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q: Joint angles (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
         tcp: Tool Center Point transformation matrix (4x4).
-        masses: Mass of each link, shape (6,).
-        cog: Center of gravity of each link in local frame, shape (6, 3).
+        masses: Mass of each link, shape (n,).
+        cog: Center of gravity of each link in local frame, shape (n, 3).
 
     Returns:
-        Gravity compensation torques for all 6 joints (N.m), shape (6,).
+        Gravity compensation torques for all n joints (N.m), shape (n,).
     """
     assert masses is not None
     assert cog is not None
 
+    n = q.shape[0]
     g = 9.81
     g_vec = np.array([0, 0, -g])
-    tau = np.zeros(6)
-    n = len(q)
+    tau = np.zeros(n)
 
     # compute jacobian at center of gravity
-    T_array = get_dh_mat(q, a, d, alpha, theta)
+    T_array, origins, axes = _get_link_matrix_numba(
+        q, a, d, alpha, theta, representation_type_value
+    )
     T0tool = T_array[-1] @ tcp
 
     # --- Segment contribution ---
-    n = 6
     for i in range(n):
-        z_i = np.ascontiguousarray(T_array[i][:3, 2])  # axe joint i
-        p_i = np.ascontiguousarray(T_array[i][:3, 3])
+        z_i = np.ascontiguousarray(axes[i])  # axe joint i
+        p_i = np.ascontiguousarray(origins[i])
         for k in range(i, n):
             # position du CoM en repère monde
             p_com = (T_array[k] @ np.append(cog[k], 1))[:3]
@@ -142,27 +205,37 @@ def get_torque_gravity(
     F_tool = masses[-1] * g_vec
 
     for i in range(n):
-        z_i = np.ascontiguousarray(T_array[i][:3, 2])
-        p_i = np.ascontiguousarray(T_array[i][:3, 3])
+        z_i = np.ascontiguousarray(axes[i])
+        p_i = np.ascontiguousarray(origins[i])
 
         r = p_tool_com - p_i
         cross_prod = np.cross(r, F_tool)
         contrib_link = np.dot(cross_prod, z_i)
         tau[i] += contrib_link
 
-    # compute torque to compensate gravity torque compute previously
-    # tau = -tau
-
     return tau
 
 
-@njit(cache=True)
-def compute_force(
+@njit(
+    float64[:](
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        int32,
+        float64[:, ::1],
+        float64[:],
+    ),
+    cache=True,
+)
+def _compute_force_numba(
     q: np.ndarray,
     a: np.ndarray,
     d: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
+    representation_type_value: int,
     tcp: np.ndarray,
     tau: np.ndarray,
 ) -> np.ndarray:
@@ -172,29 +245,42 @@ def compute_force(
     using the inverse transpose of the Jacobian matrix.
 
     Args:
-        q: Joint angles (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q: Joint angles (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
         tcp: Tool Center Point transformation matrix (4x4).
-        tau: Joint torques (N.m), shape (6,).
+        tau: Joint torques (N.m), shape (n,).
 
     Returns:
-        End-effector force/moment vector (3 forces + 3 moments), shape (6,).
+        End-effector force/moment vector (3 forces + 3 moments), shape (n,).
     """
-    J = get_jacobian(q, a, d, alpha, theta, tcp)
+    J = _get_jacobian_numba(q, a, d, alpha, theta, representation_type_value, tcp)
     result: np.ndarray = np.linalg.inv(J.T) @ np.ascontiguousarray(tau)
     return result
 
 
-@njit(cache=True)
-def fk(
+@njit(
+    float64[:, :](
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        int32,
+        float64[:, ::1],
+    ),
+    cache=True,
+)
+def _fk_numba(
     q: np.ndarray,
     a: np.ndarray,
     d: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
+    representation_type_value: int,
     tcp: np.ndarray,
 ) -> np.ndarray:
     """Forward kinematics: compute end-effector pose from joint angles.
@@ -203,29 +289,51 @@ def fk(
     end-effector (tool) frame given the joint configuration.
 
     Args:
-        q: Joint angles (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q: Joint angles (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
         tcp: Tool Center Point transformation matrix (4x4).
 
     Returns:
         Homogeneous transformation matrix (4x4) from base to tool frame.
     """
-    transforms = get_dh_mat(q, a, d, alpha, theta)
-    T0tool: np.ndarray = transforms[-1] @ tcp
+    transforms, _, _ = _get_link_matrix_numba(
+        q, a, d, alpha, theta, representation_type_value
+    )
+    T0tool: np.ndarray = np.ascontiguousarray(transforms[-1]) @ tcp
     return T0tool
 
 
-@njit(cache=True)
-def ik(
+@njit(
+    (
+        float64[:, :],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        float64[:],
+        int32,
+        float64[:, ::1],
+        float64[:],
+        float64[:],
+        float64,
+        float64,
+        int32,
+        float64,
+    ),
+    cache=True,
+)
+def _ik_numba(
     target_pose_matrix: np.ndarray,
     q_init: np.ndarray,
     a: np.ndarray,
     d: np.ndarray,
     alpha: np.ndarray,
     theta: np.ndarray,
+    representation_type_value: int,
     tcp: np.ndarray,
     q_min: np.ndarray,
     q_max: np.ndarray,
@@ -241,21 +349,22 @@ def ik(
 
     Args:
         target_pose_matrix: Desired end-effector homogeneous transformation (4x4).
-        q_init: Initial joint angle guess (rad), shape (6,).
-        a: Denavit-Hartenberg a parameters, shape (6,).
-        d: Denavit-Hartenberg d parameters, shape (6,).
-        alpha: Denavit-Hartenberg alpha parameters (rad), shape (6,).
-        theta: Denavit-Hartenberg theta offset parameters (rad), shape (6,).
+        q_init: Initial joint angle guess (rad), shape (n,).
+        a: Denavit-Hartenberg a parameters, shape (n,).
+        d: Denavit-Hartenberg d parameters, shape (n,).
+        alpha: Denavit-Hartenberg alpha parameters (rad), shape (n,).
+        theta: Denavit-Hartenberg theta offset parameters (rad), shape (n,).
+        representation_type_value (int): frame represention (DH, ...).
         tcp: Tool Center Point transformation matrix (4x4).
-        q_min: Minimum joint angles (rad), shape (6,).
-        q_max: Maximum joint angles (rad), shape (6,).
+        q_min: Minimum joint angles (rad), shape (n,).
+        q_max: Maximum joint angles (rad), shape (n,).
         epsilon_pos: Position error threshold (m), default 1e-4.
         epsilon_orient: Orientation error threshold (rad), default 1e-3.
         max_iter: Maximum iterations, default 1000.
         alpha_fix: Step size damping factor [0, 1], default 0.2.
 
     Returns:
-        Tuple of (success: bool, joint_angles: np.ndarray shape (6,)).
+        Tuple of (success: bool, joint_angles: np.ndarray shape (n,)).
     """
     q = q_init.copy()
     pos_target = np.ascontiguousarray(target_pose_matrix[:3, 3].T)
@@ -263,7 +372,7 @@ def ik(
     find_solution = False
 
     for i in range(max_iter):
-        T = fk(q, a, d, alpha, theta, tcp)
+        T = _fk_numba(q, a, d, alpha, theta, representation_type_value, tcp)
         pos_current = np.ascontiguousarray(T[:3, 3])
         rot_current = np.ascontiguousarray(T[:3, :3])
         # print(T)
@@ -286,7 +395,9 @@ def ik(
 
         # --- correction via pseudo-inverse ---
         error = np.hstack((e_pos, e_orient))  # 6x1
-        J = get_jacobian(q, a, d, alpha, theta, tcp)  # 6x6
+        J = _get_jacobian_numba(
+            q, a, d, alpha, theta, representation_type_value, tcp
+        )  # 6x6
 
         dq = alpha_fix * np.dot(np.linalg.pinv(J), error)
         q += dq
@@ -295,8 +406,13 @@ def ik(
     return find_solution, q
 
 
-@njit(cache=True)
-def compute_force_ellipsoid(J: np.ndarray) -> np.ndarray:
+@njit(
+    float64[:, :](
+        float64[:, ::1],
+    ),
+    cache=True,
+)
+def _compute_force_ellipsoid_numba(J: np.ndarray) -> np.ndarray:
     """Compute the force ellipsoid matrix
 
     Args:
@@ -309,8 +425,8 @@ def compute_force_ellipsoid(J: np.ndarray) -> np.ndarray:
     return Af
 
 
-@njit(cache=True)
-def compute_normalize_force_ellipsoid(
+@njit(float64[:, :](float64[:, ::1], float64[:]), cache=True)
+def _compute_normalize_force_ellipsoid_numba(
     J: np.ndarray, torque_max: np.ndarray
 ) -> np.ndarray:
     """Compute the force ellipsoid matrix normalized by torque max of the robot
@@ -327,8 +443,13 @@ def compute_normalize_force_ellipsoid(
     return Af
 
 
-@njit(cache=True)
-def compute_velocity_ellipsoid(J: np.ndarray) -> np.ndarray:
+@njit(
+    float64[:, :](
+        float64[:, ::1],
+    ),
+    cache=True,
+)
+def _compute_velocity_ellipsoid_numba(J: np.ndarray) -> np.ndarray:
     """Compute the velocity ellipsoid matrix
 
     Args:
@@ -341,8 +462,8 @@ def compute_velocity_ellipsoid(J: np.ndarray) -> np.ndarray:
     return Av
 
 
-@njit(cache=True)
-def compute_normalize_velocity_ellipsoid(
+@njit(float64[:, :](float64[:, ::1], float64[:]), cache=True)
+def _compute_normalize_velocity_ellipsoid_numba(
     J: np.ndarray, velocity_max: np.ndarray
 ) -> np.ndarray:
     """_summary_
@@ -359,8 +480,8 @@ def compute_normalize_velocity_ellipsoid(
     return Av
 
 
-@njit(cache=True)
-def get_amplitude_ellipsoid(A: np.ndarray, dir: np.ndarray) -> float:
+@njit(float64(float64[:, :], float64[:]), cache=True)
+def _get_amplitude_ellipsoid_numba(A: np.ndarray, dir: np.ndarray) -> float:
     """Compute the amplitude of an ellipsoid along a given direction.
 
     Calculates the radius of the ellipsoid in the specified direction.

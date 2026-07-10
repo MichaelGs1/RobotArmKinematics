@@ -22,12 +22,12 @@ def compute_velocity(T: np.ndarray, time_tot: float = 5.0) -> np.ndarray:
             - [:, 1, :]: angular velocity (rad/s)
     """
     n = T.shape[0]
-    speed = np.zeros((n - 1, 2, 3), dtype=np.float32)  # n-1 intervalles
+    speed = np.zeros((n - 1, 2, 3), dtype=np.float64)  # n-1 intervalles
 
-    positions = T[:, :3, 3].astype(np.float32)
-    rotations = T[:, :3, :3].astype(np.float32)
+    positions = T[:, :3, 3].astype(np.float64)
+    rotations = T[:, :3, :3].astype(np.float64)
 
-    dt = np.float32(time_tot / (n - 1))
+    dt = np.float64(time_tot / (n - 1))
 
     for i in range(n - 1):
         # Vitesse linéaire (norme)

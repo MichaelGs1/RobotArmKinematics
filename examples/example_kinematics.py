@@ -1,19 +1,9 @@
-from time import perf_counter
-
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from kinematics.config.doosan_m0609 import DoosanM0609Config
-from kinematics.core import (
-    compute_force,
-    fk,
-    get_amplitude_ellipsoid,
-    get_dh_mat,
-    get_jacobian,
-    get_torque_gravity,
-    ik,
-)
+from kinematics.core import RobotArmKinematics
 from kinematics.utils import (
     create_graph,
     display_vector,
@@ -26,51 +16,32 @@ from kinematics.utils import (
 
 def main() -> None:
     config = DoosanM0609Config()
-    # config = KukaIiwaConfig()
-    # config = UR20Config()
-    # config = UR10Config()
+    robot = RobotArmKinematics(config)
 
-    # tcp pose
-    tcp = np.identity(4)
-    tcp[2, 3] = 0.2759
-    config.parameter_tcp = tcp
-    # tool shape
-    config.set_tool_shape(1.280, np.array([-0.01396, 0.0067, 0.195]))
+    # # tcp pose
+    # tcp = np.identity(4)
+    # tcp[2, 3] = 0.2759
+    # config.tcp = tcp
+    # # tool shape
+    # config.set_tool_shape(1.280, np.array([-0.01396, 0.0067, 0.195]))
 
-    q = np.deg2rad(np.array([0, 0, -90, 0, -90, 180]))
-    transforms = get_dh_mat(
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-    )
+    q = np.deg2rad(np.array([0, 0, -90, 0, -90, 180]))  # base
+    q = np.random.uniform(config.q_min, config.q_max)  # random
+    print(q)
+
+    # get robot link
+    transforms, _, _ = robot.get_link_matrix(q)
 
     # test fk
-    T06 = fk(
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-    )
+    T06 = robot.fk(q)
+
     print("Position : ", T06[0:3, 3].T)
     orient_mat = T06[:3, :3]
     rot = R.from_matrix(orient_mat)
     print("Rotation : ", rot.as_euler("ZYZ", degrees=True), "\n")
-    # print("Rotation : ", rot.as_matrix(), "\n")
 
     # test jacobian
-    J = get_jacobian(
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-    )
-    print("Jacobian : ", J)
+    J = robot.get_jacobian(q)
 
     eps = 1e-6
     for i in range(J.shape[1]):
@@ -78,22 +49,8 @@ def main() -> None:
         dq = np.zeros(J.shape[1])
         dq[i] = eps
 
-        T0 = fk(
-            q,
-            config.parameter_a,
-            config.parameter_d,
-            config.parameter_alpha,
-            config.parameter_theta,
-            config.parameter_tcp,
-        )
-        T1 = fk(
-            q + dq,
-            config.parameter_a,
-            config.parameter_d,
-            config.parameter_alpha,
-            config.parameter_theta,
-            config.parameter_tcp,
-        )
+        T0 = robot.fk(q)
+        T1 = robot.fk(q + dq)
 
         v_num = (T1[:3, 3] - T0[:3, 3]) / eps
         R_rel = T1[:3, :3] @ T0[:3, :3].T
@@ -108,93 +65,37 @@ def main() -> None:
     print("\n")
 
     # test ik
-    position = np.array([0.6, 0.6, 0.4])
+    # position = np.array([0.6, 0.6, 0.4])
+    position = np.array([0.2, 0.4, 0.2])
     rot = R.from_euler("ZYZ", [0, 90, 90], degrees=True)
     pose = np.identity(4)
     pose[:3, :3] = rot.as_matrix()
     pose[:3, 3] = position.T
     print("Pose : ", pose)
 
-    # time 2e compute : 0.009s
-    t1 = perf_counter()
-    res, q_target = ik(
-        pose,
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-        config.parameter_qmin,
-        config.parameter_qmax,
-    )
-    t2 = perf_counter()
+    res, q_target = robot.ik(pose, q)
     print("Solution : ", res)
-    print("Time : ", t2 - t1)
-    print("q (rad) : ", q_target)
-    print("q (deg) : ", np.rad2deg(q_target))
-
-    position = np.array([0.6, 0.6, 0.4])
-    rot = R.from_euler("ZYZ", [0, 90, 90], degrees=True)
-    pose = np.identity(4)
-    pose[:3, :3] = rot.as_matrix()
-    pose[:3, 3] = position.T
-    print("Pose : ", pose)
-
-    # time 2e compute : 0.009s
-    t1 = perf_counter()
-    res, q_target = ik(
-        pose,
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-        config.parameter_qmin,
-        config.parameter_qmax,
-    )
-    t2 = perf_counter()
-    print("Solution : ", res)
-    print("Time : ", t2 - t1)
     print("q (rad) : ", q_target)
     print("q (deg) : ", np.rad2deg(q_target))
 
     # compute motor torque to compensate gravity
-    torques = get_torque_gravity(
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-        config.parameter_masses,
-        config.parameter_cog,
-    )
+    torques = robot.get_gravity_torque(q)
     print("Torques : ", torques)
 
-    force = compute_force(
-        q,
-        config.parameter_a,
-        config.parameter_d,
-        config.parameter_alpha,
-        config.parameter_theta,
-        config.parameter_tcp,
-        torques,
-    )
+    force = robot.get_force_tcp(q, torques)
     print("Cartesian forces : ", force)
 
     # normalisation
-    assert config.parameter_q_point_max is not None
-    assert config.parameter_torque_max is not None
-    Jscaled_manip = J @ np.diag(config.parameter_q_point_max)
-    Jscaled_force = np.linalg.inv(np.diag(config.parameter_torque_max)) @ J.T
+    assert config.joint_velocity_max is not None
+    assert config.torque_max is not None
+    Jscaled_manip = J @ np.diag(config.joint_velocity_max)
+    Jscaled_force = np.linalg.inv(np.diag(config.torque_max)) @ J.T
 
     # test ellipsoid translation
     ax = create_graph(title="Ellipsoid translation")
     plot_robot_3d(ax, transforms)
     plot_tcp(ax, T06)
-    plot_frame(ax, np.identity(4))
+    plot_frame(ax, np.identity(4), 0.5)
 
     # Ellipsoïde de vitesse
     A_v = Jscaled_manip[:3, :] @ Jscaled_manip[:3, :].T
@@ -206,11 +107,11 @@ def main() -> None:
     plot_ellipsoid(A_f, T06, ax, color="red", label="Force")
 
     # TCP vector translational speed
-    vect_tcp_v = np.array([0.093, -0.995, 0.007], dtype=np.float32).T
+    vect_tcp_v = np.array([0.093, -0.995, 0.007], dtype=np.float64).T
     display_vector(ax, T06[:3, 3].T, vect_tcp_v)
 
-    speed_v_amp = get_amplitude_ellipsoid(A_v, vect_tcp_v)
-    force_v_amp = get_amplitude_ellipsoid(A_f, vect_tcp_v)
+    speed_v_amp = robot.get_amplitude_ellipsoid(A_v, vect_tcp_v)
+    force_v_amp = robot.get_amplitude_ellipsoid(A_f, vect_tcp_v)
     print("Speed v amp : ", speed_v_amp)
     print("Force v amp : ", force_v_amp)
 
@@ -221,7 +122,7 @@ def main() -> None:
     ax = create_graph(title="Ellipsoid rotation")
     plot_robot_3d(ax, transforms)
     plot_tcp(ax, T06)
-    plot_frame(ax, np.identity(4))
+    plot_frame(ax, np.identity(4), 0.5)
 
     # Ellipsoïde de vitesse
     A_v = Jscaled_manip[3:, :] @ Jscaled_manip[3:, :].T
@@ -233,16 +134,20 @@ def main() -> None:
     plot_ellipsoid(A_f, T06, ax, color="red", label="Force")
 
     # TCP vector angular speed
-    vect_tcp_omega = np.array([0.093, -0.995, 0.007], dtype=np.float32).T
+    vect_tcp_omega = np.array([0.093, -0.995, 0.007], dtype=np.float64).T
     display_vector(ax, T06[:3, 3].T, vect_tcp_omega)
-    speed_omega_amp = get_amplitude_ellipsoid(A_v, vect_tcp_omega)
-    force_omega_amp = get_amplitude_ellipsoid(A_f, vect_tcp_omega)
+    speed_omega_amp = robot.get_amplitude_ellipsoid(A_v, vect_tcp_omega)
+    force_omega_amp = robot.get_amplitude_ellipsoid(A_f, vect_tcp_omega)
     print("Speed omega amp : ", speed_omega_amp)
     print("Force omega amp : ", force_omega_amp)
 
     plt.tight_layout()
     plt.show()
 
+
+# import cProfile
+
+# cProfile.run("main()")
 
 if __name__ == "__main__":
     main()

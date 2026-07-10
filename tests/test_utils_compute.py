@@ -4,30 +4,44 @@ import numpy as np
 
 from kinematics.utils.utils_compute import (
     dh_mat,
+    dh_mat_khalil,
     matrix_to_rotvect,
     rotvect_to_matrix,
 )
 
 
-class TestDhMat:
+def _single_dh_transform(func, a, d, alpha, theta):
+    return func(
+        np.atleast_1d(a),
+        np.atleast_1d(d),
+        np.atleast_1d(alpha),
+        np.atleast_1d(theta),
+    )[0]
+
+
+class TestDhKhalilMat:
     """Test Denavit-Hartenberg matrix computation (Khalil convention)."""
 
     def test_identity_transformation(self):
         """Test DH matrix with identity transformation (all zeros)."""
-        mat = dh_mat(a=0, d=0, alpha=0, theta=0)
+        mat = _single_dh_transform(dh_mat_khalil, a=0, d=0, alpha=0, theta=0)
         expected = np.identity(4)
         np.testing.assert_array_almost_equal(mat, expected)
 
     def test_homogeneous_matrix_structure(self):
         """Test DH matrix has proper homogeneous structure."""
-        mat = dh_mat(a=1.0, d=0.5, alpha=np.pi / 4, theta=np.pi / 6)
+        mat = _single_dh_transform(
+            dh_mat_khalil, a=1.0, d=0.5, alpha=np.pi / 4, theta=np.pi / 6
+        )
         assert mat.shape == (4, 4)
         # Bottom row should be [0, 0, 0, 1]
         np.testing.assert_array_almost_equal(mat[3, :], [0, 0, 0, 1])
 
     def test_rotation_matrix_orthogonal(self):
         """Test that the rotation part is orthogonal (property of DH)."""
-        mat = dh_mat(a=0.5, d=0.3, alpha=np.pi / 3, theta=np.pi / 4)
+        mat = _single_dh_transform(
+            dh_mat_khalil, a=0.5, d=0.3, alpha=np.pi / 3, theta=np.pi / 4
+        )
         R = mat[:3, :3]
         # R @ R.T should be identity (orthogonality)
         np.testing.assert_array_almost_equal(R @ R.T, np.eye(3))
@@ -42,7 +56,7 @@ class TestDhMat:
             alpha = np.random.uniform(-np.pi, np.pi)
             theta = np.random.uniform(-np.pi, np.pi)
 
-            mat = dh_mat(a, d, alpha, theta)
+            mat = _single_dh_transform(dh_mat_khalil, a, d, alpha, theta)
             R = mat[:3, :3]
 
             # Check orthogonality
@@ -52,7 +66,7 @@ class TestDhMat:
     def test_translation_a_only(self):
         """Test DH matrix with only a (z-axis translation)."""
         a_val = 1.5
-        mat = dh_mat(a=a_val, d=0, alpha=0, theta=0)
+        mat = _single_dh_transform(dh_mat_khalil, a=a_val, d=0, alpha=0, theta=0)
         # When alpha=0, d=0, theta=0: position should be (0, 0, a)
         assert np.isclose(mat[0, 3], a_val)
         assert np.isclose(mat[1, 3], 0)
@@ -60,7 +74,7 @@ class TestDhMat:
 
     def test_theta_rotation_pi_2(self):
         """Test 90-degree rotation around Z axis."""
-        mat = dh_mat(a=0, d=0, alpha=0, theta=np.pi / 2)
+        mat = _single_dh_transform(dh_mat_khalil, a=0, d=0, alpha=0, theta=np.pi / 2)
         # Rotation matrix for pi/2 around Z:
         # [ 0 -1  0]
         # [ 1  0  0]
@@ -73,7 +87,7 @@ class TestDhMat:
 
     def test_alpha_rotation_pi_2(self):
         """Test 90-degree rotation around X axis (alpha)."""
-        mat = dh_mat(a=0, d=0, alpha=np.pi / 2, theta=0)
+        mat = _single_dh_transform(dh_mat_khalil, a=0, d=0, alpha=np.pi / 2, theta=0)
         # Rotation matrix for pi/2 around X:
         # [ 1  0  0]
         # [ 0  0 -1]
@@ -88,7 +102,9 @@ class TestDhMat:
         """Test d translation with alpha rotation."""
         d_val = 1.0
         alpha_val = np.pi / 2
-        mat = dh_mat(a=0, d=d_val, alpha=alpha_val, theta=0)
+        mat = _single_dh_transform(
+            dh_mat_khalil, a=0, d=d_val, alpha=alpha_val, theta=0
+        )
         # When alpha = pi/2: sin(alpha) = 1, cos(alpha) = 0
         # Position should have components dependent on a and alpha
         assert np.isclose(mat[1, 3], -d_val * 1.0)  # -a * sin(alpha)
@@ -101,13 +117,129 @@ class TestDhMat:
         alpha = np.pi / 6  # 30 degrees
         theta = np.pi / 4  # 45 degrees
 
-        mat = dh_mat(a, d, alpha, theta)
+        mat = _single_dh_transform(dh_mat_khalil, a, d, alpha, theta)
 
         # Test homogeneous structure
         assert mat.shape == (4, 4)
         np.testing.assert_array_almost_equal(mat[3, :], [0, 0, 0, 1])
 
         # Test rotation part is valid
+        R = mat[:3, :3]
+        np.testing.assert_array_almost_equal(R @ R.T, np.eye(3), decimal=5)
+        assert np.isclose(np.linalg.det(R), 1.0, atol=1e-5)
+
+
+class TestDhClassicMat:
+    """Test Denavit-Hartenberg matrix computation (Classic convention)."""
+
+    def test_identity_transformation(self):
+        """Test DH matrix with identity transformation (all zeros)."""
+        mat = _single_dh_transform(dh_mat, a=0, d=0, alpha=0, theta=0)
+        expected = np.identity(4)
+        np.testing.assert_array_almost_equal(mat, expected)
+
+    def test_homogeneous_matrix_structure(self):
+        """Test DH matrix has proper homogeneous structure."""
+        mat = _single_dh_transform(
+            dh_mat, a=1.0, d=0.5, alpha=np.pi / 4, theta=np.pi / 6
+        )
+        assert mat.shape == (4, 4)
+
+        # Bottom row should be [0,0,0,1]
+        np.testing.assert_array_almost_equal(mat[3, :], [0, 0, 0, 1])
+
+    def test_rotation_matrix_orthogonal(self):
+        """Test that the rotation part is orthogonal."""
+        mat = _single_dh_transform(
+            dh_mat, a=0.5, d=0.3, alpha=np.pi / 3, theta=np.pi / 4
+        )
+        R = mat[:3, :3]
+        np.testing.assert_array_almost_equal(R @ R.T, np.eye(3))
+        assert np.isclose(np.linalg.det(R), 1.0)
+
+    def test_rotation_matrix_orthogonal_random(self):
+        """Test orthogonality with random DH parameters."""
+        for _ in range(10):
+            a = np.random.uniform(-1, 1)
+            d = np.random.uniform(-1, 1)
+            alpha = np.random.uniform(-np.pi, np.pi)
+            theta = np.random.uniform(-np.pi, np.pi)
+
+            mat = _single_dh_transform(dh_mat, a, d, alpha, theta)
+            R = mat[:3, :3]
+            np.testing.assert_array_almost_equal(R @ R.T, np.eye(3), decimal=5)
+            assert np.isclose(np.linalg.det(R), 1.0, atol=1e-5)
+
+    def test_translation_a_only(self):
+        """Test DH matrix with only a translation."""
+        a_val = 1.5
+        mat = _single_dh_transform(dh_mat, a=a_val, d=0, alpha=0, theta=0)
+        # Classic DH:
+        # x = a*cos(theta)
+        # y = a*sin(theta)
+        # z = d
+        assert np.isclose(mat[0, 3], a_val)
+        assert np.isclose(mat[1, 3], 0)
+        assert np.isclose(mat[2, 3], 0)
+
+    def test_translation_d_only(self):
+        """Test DH matrix with only d translation."""
+        d_val = 1.5
+        mat = _single_dh_transform(dh_mat, a=0, d=d_val, alpha=0, theta=0)
+        assert np.isclose(mat[0, 3], 0)
+        assert np.isclose(mat[1, 3], 0)
+        assert np.isclose(mat[2, 3], d_val)
+
+    def test_theta_rotation_pi_2(self):
+        """Test 90-degree rotation around Z axis."""
+        mat = _single_dh_transform(dh_mat, a=0, d=0, alpha=0, theta=np.pi / 2)
+        # Rotation around Z:
+        #
+        # [0 -1 0]
+        # [1  0 0]
+        # [0  0 1]
+        assert np.isclose(mat[0, 0], 0, atol=1e-10)
+        assert np.isclose(mat[0, 1], -1)
+        assert np.isclose(mat[1, 0], 1)
+        assert np.isclose(mat[1, 1], 0, atol=1e-10)
+        assert np.isclose(mat[2, 2], 1)
+
+    def test_alpha_rotation_pi_2(self):
+        """Test 90-degree rotation around X axis."""
+        mat = _single_dh_transform(dh_mat, a=0, d=0, alpha=np.pi / 2, theta=0)
+        # Rotation around X:
+        #
+        # [1 0  0]
+        # [0 0 -1]
+        # [0 1  0]
+        assert np.isclose(mat[0, 0], 1)
+        assert np.isclose(mat[1, 1], 0, atol=1e-10)
+        assert np.isclose(mat[1, 2], -1)
+        assert np.isclose(mat[2, 1], 1)
+        assert np.isclose(mat[2, 2], 0, atol=1e-10)
+
+    def test_d_translation_with_alpha(self):
+        """Test d translation with alpha rotation."""
+        d_val = 1.0
+        alpha_val = np.pi / 2
+        mat = _single_dh_transform(dh_mat, a=0, d=d_val, alpha=alpha_val, theta=0)
+        # d is always along z_i before Rx(alpha)
+        # translation remains:
+        # [0,0,d]
+        assert np.isclose(mat[0, 3], 0)
+        assert np.isclose(mat[1, 3], 0)
+        assert np.isclose(mat[2, 3], d_val)
+
+    def test_combined_transformation(self):
+        """Test combined a, d, alpha, theta transformation."""
+        a = 0.5
+        d = 0.3
+        alpha = np.pi / 6
+        theta = np.pi / 4
+        mat = _single_dh_transform(dh_mat, a, d, alpha, theta)
+        assert mat.shape == (4, 4)
+
+        np.testing.assert_array_almost_equal(mat[3, :], [0, 0, 0, 1])
         R = mat[:3, :3]
         np.testing.assert_array_almost_equal(R @ R.T, np.eye(3), decimal=5)
         assert np.isclose(np.linalg.det(R), 1.0, atol=1e-5)
@@ -123,9 +255,9 @@ class TestDhComposition:
         alphas = [0, -np.pi / 2, np.pi / 2]
         thetas = [0.1, 0.2, -0.15]
 
-        T01 = dh_mat(a_vals[0], d_vals[0], alphas[0], thetas[0])
-        T12 = dh_mat(a_vals[1], d_vals[1], alphas[1], thetas[1])
-        T23 = dh_mat(a_vals[2], d_vals[2], alphas[2], thetas[2])
+        T01 = _single_dh_transform(dh_mat, a_vals[0], d_vals[0], alphas[0], thetas[0])
+        T12 = _single_dh_transform(dh_mat, a_vals[1], d_vals[1], alphas[1], thetas[1])
+        T23 = _single_dh_transform(dh_mat, a_vals[2], d_vals[2], alphas[2], thetas[2])
 
         # Both should be equal (within numerical precision)
         result1 = (T01 @ T12) @ T23
@@ -140,7 +272,7 @@ class TestDhComposition:
             d = np.random.uniform(0, 1)
             alpha = np.random.uniform(-np.pi, np.pi)
             theta = np.random.uniform(-np.pi, np.pi)
-            matrices.append(dh_mat(a, d, alpha, theta))
+            matrices.append(_single_dh_transform(dh_mat, a, d, alpha, theta))
 
         # Compose all matrices
         T = matrices[0]
@@ -163,7 +295,13 @@ class TestDhComposition:
         alpha = np.pi / 6
         theta = np.pi / 4
 
-        T = dh_mat(a, d, alpha, theta)
+        T = _single_dh_transform(dh_mat, a, d, alpha, theta)
+        T_inv = np.linalg.inv(T)
+
+        result = T @ T_inv
+        np.testing.assert_array_almost_equal(result, np.eye(4), decimal=10)
+
+        T = _single_dh_transform(dh_mat_khalil, a, d, alpha, theta)
         T_inv = np.linalg.inv(T)
 
         result = T @ T_inv
@@ -181,7 +319,13 @@ class TestDhComposition:
         # Compute individual transforms
         transforms = []
         for i in range(6):
-            T = dh_mat(a[i], d[i], alpha[i], theta_offset[i] + q[i])
+            T = _single_dh_transform(
+                dh_mat,
+                a[i],
+                d[i],
+                alpha[i],
+                theta_offset[i] + q[i],
+            )
             transforms.append(T)
 
         # Compose chain

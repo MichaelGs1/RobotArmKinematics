@@ -75,9 +75,12 @@ def plot_robot_3d(ax: Any, transforms: np.ndarray) -> None:
             label="Robot" if i == 0 else "",
         )
 
+        plot_frame(ax, t=transforms[i], scale=0.1)
+
     # Annoter chaque articulation
     for i, pos in enumerate(joint_positions):
-        ax.text(pos[0], pos[1], pos[2], f"Joint {i}", fontsize=10)
+        if i < len(joint_positions) - 1:
+            ax.text(pos[0], pos[1], pos[2], f"Joint {i + 1}", fontsize=10)
 
 
 def plot_tcp(ax: Any, t_end: np.ndarray, scale: float = 0.25) -> None:

@@ -1,16 +1,4 @@
-from .core import (
-    compute_force,
-    compute_force_ellipsoid,
-    compute_normalize_force_ellipsoid,
-    compute_normalize_velocity_ellipsoid,
-    compute_velocity_ellipsoid,
-    fk,
-    get_amplitude_ellipsoid,
-    get_dh_mat,
-    get_jacobian,
-    get_torque_gravity,
-    ik,
-)
+from .robot import RobotArmKinematics
 from .trajectory import (
     compute_circular_trajectory,
     compute_linear_trajectory,
@@ -18,17 +6,7 @@ from .trajectory import (
 )
 
 __all__ = [
-    "get_dh_mat",
-    "get_jacobian",
-    "get_torque_gravity",
-    "compute_force",
-    "fk",
-    "ik",
-    "get_amplitude_ellipsoid",
-    "compute_force_ellipsoid",
-    "compute_normalize_force_ellipsoid",
-    "compute_velocity_ellipsoid",
-    "compute_normalize_velocity_ellipsoid",
+    "RobotArmKinematics",
     "compute_linear_trajectory",
     "compute_circular_trajectory",
     "compute_velocity",

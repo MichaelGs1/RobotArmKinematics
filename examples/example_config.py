@@ -1,38 +1,62 @@
 import numpy as np
 
+from kinematics.config.config import BaseConfig, RepresentationType
+from kinematics.config.doosan_m0609 import DoosanM0609Config
 from kinematics.config.kuka_iiwa import KukaIiwaConfig
-from kinematics.utils import dh_mat
+from kinematics.config.ur20 import UR20Config
+from kinematics.utils import dh_mat, dh_mat_khalil
 
 
-def main() -> None:
-    # config = UR20Config()
-    config = KukaIiwaConfig()
-    # config = UR10Config()
-    # config = DoosanM0609Config()
+def display_config(config: BaseConfig) -> None:
+    print("Config :", config.__class__)
     print("DHM parameters :")
-    print(config.parameter_a)
-    print(config.parameter_d)
-    print(config.parameter_alpha)
-    print(config.parameter_theta)
+    print(config.a)
+    print(config.d)
+    print(config.alpha)
+    print(config.theta)
 
-    print("TCP : ", config.parameter_tcp)
+    print("TCP : ", config.tcp)
 
     tcp = np.identity(4)
     tcp[2, 3] = 0.2
-    config.parameter_tcp = tcp
+    config.tcp = tcp
 
-    print("TCP : ", config.parameter_tcp)
+    print("TCP : ", config.tcp)
 
-    res = dh_mat(
-        config.parameter_a[0],
-        config.parameter_d[0],
-        config.parameter_alpha[0],
-        config.parameter_theta[0],
-    )
-    print("Matrix DHM T01 : ", res)
+    if config.represention_type == RepresentationType.DH:
+        res = dh_mat(
+            config.a,
+            config.d,
+            config.alpha,
+            config.theta,
+        )
+        print("Matrixes DH : ", res)
+    elif config.represention_type == RepresentationType.DH_KHALIL:
+        res = dh_mat_khalil(
+            config.a,
+            config.d,
+            config.alpha,
+            config.theta,
+        )
+        print("Matrix DHM : ", res)
 
-    print("Masses : ", config.parameter_masses)
-    print("Cog : ", config.parameter_cog)
+    print("Masses : ", config.masses)
+    print("Cog : ", config.link_cog)
+    print("\n")
+
+
+def main() -> None:
+    # 7 axis
+    config_kuka = KukaIiwaConfig()
+    display_config(config_kuka)
+
+    # 6 axis DHM
+    config_doosan = DoosanM0609Config()
+    display_config(config_doosan)
+
+    # 6 axis DH
+    config_ur = UR20Config()
+    display_config(config_ur)
 
 
 if __name__ == "__main__":

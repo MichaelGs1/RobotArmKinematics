@@ -1,7 +1,7 @@
 import numpy as np
 
-from kinematics.config.config import BaseConfig
-from kinematics.core import get_dh_mat
+from kinematics.config.config import BaseConfig, RepresentationType
+from kinematics.core.core import _get_link_matrix_numba
 
 
 class DoosanM0609Config(BaseConfig):
@@ -18,16 +18,21 @@ class DoosanM0609Config(BaseConfig):
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
 
-        q_min = np.deg2rad(
-            np.array([-360, -95, -135, -360, -135, -330], dtype=np.float64)
-        )
-        q_max = np.deg2rad(np.array([360, 95, 135, 360, 135, 330], dtype=np.float64))
+        representation = RepresentationType.DH_KHALIL
 
+        # geom limit
+        q_min = np.deg2rad(
+            np.array([-360, -95, -125, -360, -135, -330], dtype=np.float64)
+        )
+        q_max = np.deg2rad(np.array([360, 95, 125, 360, 135, 330], dtype=np.float64))
+
+        # dynamic limit
         q_point_max = np.deg2rad(
             np.array([150, 150, 180, 225, 225, 225], dtype=np.float64)
         )
         torque_max = np.array([160, 160, 90, 45, 45, 45], dtype=np.float64)
 
+        # dynamic param
         masses = np.array([5.02, 8.04, 3.6, 3.57, 2.83, 1.16, 0], dtype=np.float64)
         cog = (
             np.array(
@@ -46,12 +51,29 @@ class DoosanM0609Config(BaseConfig):
         )  # com repere base pour config q = 0
 
         # compute cog in link frame
-        transforms = get_dh_mat(np.array([0, 0, 0, 0, 0, 0]), a, d, alpha, theta)
+        transforms, _, _ = _get_link_matrix_numba(
+            np.array([0, 0, 0, 0, 0, 0], dtype=np.float64),
+            a,
+            d,
+            alpha,
+            theta,
+            representation.value,
+        )
         array_t = transforms.copy()
         array_t = np.append(array_t, [np.identity(4)], axis=0)
         for i in range(cog.shape[0]):
             cog[i] = (np.linalg.inv(array_t[i]) @ np.append(cog[i], 1.0))[:3]
 
         super().__init__(
-            a, d, alpha, theta, q_min, q_max, q_point_max, torque_max, masses, cog
+            a,
+            d,
+            alpha,
+            theta,
+            representation,
+            q_min,
+            q_max,
+            q_point_max,
+            torque_max,
+            masses,
+            cog,
         )

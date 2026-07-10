@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from kinematics.config.config import BaseConfig
+from kinematics.config.config import BaseConfig, RepresentationType
 from kinematics.config.doosan_m0609.config_doosan_m0609 import DoosanM0609Config
 from kinematics.config.kuka_iiwa.config_kuka_iiwa import KukaIiwaConfig
 from kinematics.config.ur10.config_ur10 import UR10Config
@@ -18,10 +18,11 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, representation_type, q_min, q_max)
 
         assert config is not None
 
@@ -31,17 +32,18 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, representation_type, q_min, q_max)
 
-        np.testing.assert_array_equal(config.parameter_d, d)
-        np.testing.assert_array_equal(config.parameter_a, a)
-        np.testing.assert_array_equal(config.parameter_alpha, alpha)
-        np.testing.assert_array_equal(config.parameter_theta, theta)
-        np.testing.assert_array_equal(config.parameter_qmin, q_min)
-        np.testing.assert_array_equal(config.parameter_qmax, q_max)
+        np.testing.assert_array_equal(config.d, d)
+        np.testing.assert_array_equal(config.a, a)
+        np.testing.assert_array_equal(config.alpha, alpha)
+        np.testing.assert_array_equal(config.theta, theta)
+        np.testing.assert_array_equal(config.q_min, q_min)
+        np.testing.assert_array_equal(config.q_max, q_max)
 
     def test_base_config_tcp_property(self):
         """Test TCP property getter and setter."""
@@ -49,21 +51,22 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
-        config = BaseConfig(a, d, alpha, theta, q_min, q_max)
+        config = BaseConfig(a, d, alpha, theta, representation_type, q_min, q_max)
 
         # Default TCP should be identity
-        np.testing.assert_array_equal(config.parameter_tcp, np.identity(4))
+        np.testing.assert_array_equal(config.tcp, np.identity(4))
 
         # Set custom TCP
         tcp = np.identity(4)
         tcp[0, 3] = 0.1
         tcp[2, 3] = 0.2
-        config.parameter_tcp = tcp
+        config.tcp = tcp
 
-        np.testing.assert_array_equal(config.parameter_tcp, tcp)
+        np.testing.assert_array_equal(config.tcp, tcp)
 
     def test_base_config_with_optional_parameters(self):
         """Test BaseConfig with optional parameters."""
@@ -71,15 +74,26 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
         q_point_max = np.deg2rad(np.array([150, 150, 180, 225, 225, 225]))
         torque_max = np.array([160, 160, 90, 45, 45, 45])
 
-        config = BaseConfig(a, d, alpha, theta, q_min, q_max, q_point_max, torque_max)
+        config = BaseConfig(
+            a,
+            d,
+            alpha,
+            theta,
+            representation_type,
+            q_min,
+            q_max,
+            q_point_max,
+            torque_max,
+        )
 
-        np.testing.assert_array_equal(config.parameter_q_point_max, q_point_max)
-        np.testing.assert_array_equal(config.parameter_torque_max, torque_max)
+        np.testing.assert_array_equal(config.joint_velocity_max, q_point_max)
+        np.testing.assert_array_equal(config.torque_max, torque_max)
 
     def test_base_config_with_masses_and_cog(self):
         """Test BaseConfig with masses and center of gravity."""
@@ -87,6 +101,7 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
@@ -98,14 +113,15 @@ class TestBaseConfig:
             d,
             alpha,
             theta,
+            representation_type,
             q_min,
             q_max,
             masses=masses,
             cog=cog,
         )
 
-        np.testing.assert_array_equal(config.parameter_masses, masses)
-        np.testing.assert_array_equal(config.parameter_cog, cog)
+        np.testing.assert_array_equal(config.masses, masses)
+        np.testing.assert_array_equal(config.link_cog, cog)
 
     def test_set_tool_shape(self):
         """Test setting tool shape (mass and COG)."""
@@ -113,6 +129,7 @@ class TestBaseConfig:
         d = np.array([0.1, 0.2, 0.0, 0.15, 0.0, 0.05])
         alpha = np.array([0, -np.pi / 2, 0, np.pi / 2, -np.pi / 2, np.pi / 2])
         theta = np.array([0, -np.pi / 2, np.pi / 2, 0, 0, 0])
+        representation_type = RepresentationType.DH_KHALIL
         q_min = np.array([-np.pi] * 6)
         q_max = np.array([np.pi] * 6)
 
@@ -134,6 +151,7 @@ class TestBaseConfig:
             d,
             alpha,
             theta,
+            representation_type,
             q_min,
             q_max,
             masses=masses,
@@ -146,8 +164,8 @@ class TestBaseConfig:
 
         config.set_tool_shape(tool_mass, tool_cog)
 
-        assert config.parameter_masses[-1] == tool_mass
-        np.testing.assert_array_equal(config.parameter_cog[-1], tool_cog)
+        assert config.masses[-1] == tool_mass
+        np.testing.assert_array_equal(config.link_cog[-1], tool_cog)
 
 
 class TestDoosanM0609Config:
@@ -158,17 +176,18 @@ class TestDoosanM0609Config:
         config = DoosanM0609Config()
 
         assert config is not None
-        assert config.parameter_d.shape == (6,)
-        assert config.parameter_a.shape == (6,)
-        assert config.parameter_alpha.shape == (6,)
-        assert config.parameter_theta.shape == (6,)
+        assert config.d.shape == (6,)
+        assert config.a.shape == (6,)
+        assert config.alpha.shape == (6,)
+        assert config.theta.shape == (6,)
+        assert config.represention_type == RepresentationType.DH_KHALIL
 
     def test_doosan_joint_limits(self):
         """Test DoosanM0609Config joint limits are symmetric and valid."""
         config = DoosanM0609Config()
 
-        q_min = config.parameter_qmin
-        q_max = config.parameter_qmax
+        q_min = config.q_min
+        q_max = config.q_max
 
         assert len(q_min) == 6
         assert len(q_max) == 6
@@ -179,10 +198,10 @@ class TestDoosanM0609Config:
         """Test DoosanM0609Config DH parameters are valid."""
         config = DoosanM0609Config()
 
-        d = config.parameter_d
-        a = config.parameter_a
-        alpha = config.parameter_alpha
-        theta = config.parameter_theta
+        d = config.d
+        a = config.a
+        alpha = config.alpha
+        theta = config.theta
 
         assert np.all(np.isfinite(d))
         assert np.all(np.isfinite(a))
@@ -193,8 +212,8 @@ class TestDoosanM0609Config:
         """Test DoosanM0609Config masses and COG are valid."""
         config = DoosanM0609Config()
 
-        masses = config.parameter_masses
-        cog = config.parameter_cog
+        masses = config.masses
+        cog = config.link_cog
 
         assert masses is not None
         assert cog is not None
@@ -214,17 +233,18 @@ class TestUR10Config:
         config = UR10Config()
 
         assert config is not None
-        assert config.parameter_d.shape == (6,)
-        assert config.parameter_a.shape == (6,)
-        assert config.parameter_alpha.shape == (6,)
-        assert config.parameter_theta.shape == (6,)
+        assert config.d.shape == (6,)
+        assert config.a.shape == (6,)
+        assert config.alpha.shape == (6,)
+        assert config.theta.shape == (6,)
+        assert config.represention_type == RepresentationType.DH_KHALIL
 
     def test_ur10_joint_limits(self):
         """Test UR10Config joint limits are valid."""
         config = UR10Config()
 
-        q_min = config.parameter_qmin
-        q_max = config.parameter_qmax
+        q_min = config.q_min
+        q_max = config.q_max
 
         assert len(q_min) == 6
         assert len(q_max) == 6
@@ -234,10 +254,10 @@ class TestUR10Config:
         """Test UR10Config DH parameters are valid."""
         config = UR10Config()
 
-        d = config.parameter_d
-        a = config.parameter_a
-        alpha = config.parameter_alpha
-        theta = config.parameter_theta
+        d = config.d
+        a = config.a
+        alpha = config.alpha
+        theta = config.theta
 
         assert np.all(np.isfinite(d))
         assert np.all(np.isfinite(a))
@@ -253,17 +273,18 @@ class TestUR20Config:
         config = UR20Config()
 
         assert config is not None
-        assert config.parameter_d.shape == (6,)
-        assert config.parameter_a.shape == (6,)
-        assert config.parameter_alpha.shape == (6,)
-        assert config.parameter_theta.shape == (6,)
+        assert config.d.shape == (6,)
+        assert config.a.shape == (6,)
+        assert config.alpha.shape == (6,)
+        assert config.theta.shape == (6,)
+        assert config.represention_type == RepresentationType.DH
 
     def test_ur20_joint_limits(self):
         """Test UR20Config joint limits are valid."""
         config = UR20Config()
 
-        q_min = config.parameter_qmin
-        q_max = config.parameter_qmax
+        q_min = config.q_min
+        q_max = config.q_max
 
         assert len(q_min) == 6
         assert len(q_max) == 6
@@ -273,15 +294,31 @@ class TestUR20Config:
         """Test UR20Config DH parameters are valid."""
         config = UR20Config()
 
-        d = config.parameter_d
-        a = config.parameter_a
-        alpha = config.parameter_alpha
-        theta = config.parameter_theta
+        d = config.d
+        a = config.a
+        alpha = config.alpha
+        theta = config.theta
 
         assert np.all(np.isfinite(d))
         assert np.all(np.isfinite(a))
         assert np.all(np.isfinite(alpha))
         assert np.all(np.isfinite(theta))
+
+    def test_ur20_masses_and_cog(self):
+        """Test UR20Config masses and COG are valid."""
+        config = UR20Config()
+
+        masses = config.masses
+        cog = config.link_cog
+
+        assert masses is not None
+        assert cog is not None
+        assert masses.shape == (7,)
+        assert cog.shape == (7, 3)
+        # All masses should be positive or zero
+        assert np.all(masses >= 0)
+        # All COG coordinates should be finite
+        assert np.all(np.isfinite(cog))
 
 
 class TestIiwaConfig:
@@ -292,17 +329,18 @@ class TestIiwaConfig:
         config = KukaIiwaConfig()
 
         assert config is not None
-        assert config.parameter_d.shape == (7,)
-        assert config.parameter_a.shape == (7,)
-        assert config.parameter_alpha.shape == (7,)
-        assert config.parameter_theta.shape == (7,)
+        assert config.d.shape == (7,)
+        assert config.a.shape == (7,)
+        assert config.alpha.shape == (7,)
+        assert config.theta.shape == (7,)
+        assert config.represention_type == RepresentationType.DH_KHALIL
 
     def test_iiwa_joint_limits(self):
         """Test IiwaConfig joint limits are valid."""
         config = KukaIiwaConfig()
 
-        q_min = config.parameter_qmin
-        q_max = config.parameter_qmax
+        q_min = config.q_min
+        q_max = config.q_max
 
         assert len(q_min) == 7
         assert len(q_max) == 7
@@ -312,10 +350,10 @@ class TestIiwaConfig:
         """Test IiwaConfig DH parameters are valid."""
         config = KukaIiwaConfig()
 
-        d = config.parameter_d
-        a = config.parameter_a
-        alpha = config.parameter_alpha
-        theta = config.parameter_theta
+        d = config.d
+        a = config.a
+        alpha = config.alpha
+        theta = config.theta
 
         assert np.all(np.isfinite(d))
         assert np.all(np.isfinite(a))

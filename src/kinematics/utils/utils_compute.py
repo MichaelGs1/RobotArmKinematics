@@ -3,12 +3,55 @@ from numba import njit
 
 
 @njit(cache=True)
+def dh_mat_khalil(
+    a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
+) -> np.ndarray:
+    """Compute a homogeneous transformation matrix using Denavit-Hartenberg Khalil parameters.
+
+    Constructs a nx4x4 homogeneous transformation matrix from the modified Denavit-Hartenberg
+    parameters. Used for building kinematic chains in robotic manipulators.
+
+    Args:
+        a: Translation of zi-1 to zi along xi-1 (m).
+        d: Translation of xi-1 to xi along zi-1 (m).
+        alpha: Rotation of zi-1 to zi around xi-1 (rad).
+        theta: Rotation of xi-1 to xi around zi (rad).
+
+    Returns:
+        nx4x4 homogeneous transformation matrix.
+    """
+    n = a.shape[0]
+    matrixes = np.zeros((n, 4, 4), dtype=np.float64)
+
+    cos_theta, sin_theta = np.cos(theta), np.sin(theta)
+    cos_alpha, sin_alpha = np.cos(alpha), np.sin(alpha)
+
+    matrixes[:, 0, 0] = cos_theta
+    matrixes[:, 1, 0] = cos_alpha * sin_theta
+    matrixes[:, 2, 0] = sin_alpha * sin_theta
+
+    matrixes[:, 0, 1] = -sin_theta
+    matrixes[:, 1, 1] = cos_alpha * cos_theta
+    matrixes[:, 2, 1] = sin_alpha * cos_theta
+
+    matrixes[:, 1, 2] = -sin_alpha
+    matrixes[:, 2, 2] = cos_alpha
+
+    matrixes[:, 0, 3] = a
+    matrixes[:, 1, 3] = -d * sin_alpha
+    matrixes[:, 2, 3] = d * cos_alpha
+    matrixes[:, 3, 3] = 1
+
+    return matrixes
+
+
+@njit(cache=True)
 def dh_mat(
     a: np.ndarray, d: np.ndarray, alpha: np.ndarray, theta: np.ndarray
 ) -> np.ndarray:
-    """Compute a homogeneous transformation matrix using Denavit-Hartenberg (Khalil) parameters.
+    """Compute a homogeneous transformation matrix using Denavit-Hartenberg parameters.
 
-    Constructs a 4x4 homogeneous transformation matrix from the modified Denavit-Hartenberg
+    Constructs a nx4x4 homogeneous transformation matrix from the modified Denavit-Hartenberg
     parameters. Used for building kinematic chains in robotic manipulators.
 
     Args:
@@ -20,23 +63,31 @@ def dh_mat(
     Returns:
         4x4 homogeneous transformation matrix.
     """
+    n = a.shape[0]
+    matrixes = np.zeros((n, 4, 4), dtype=np.float64)
+
+    cos_theta, sin_theta = np.cos(theta), np.sin(theta)
+    cos_alpha, sin_alpha = np.cos(alpha), np.sin(alpha)
+
     mat = np.identity(4)
-    mat[0, 0] = np.cos(theta)
-    mat[1, 0] = np.cos(alpha) * np.sin(theta)
-    mat[2, 0] = np.sin(alpha) * np.sin(theta)
+    matrixes[:, 0, 0] = cos_theta
+    matrixes[:, 1, 0] = sin_theta
+    matrixes[:, 2, 0] = 0
 
-    mat[0, 1] = -np.sin(theta)
-    mat[1, 1] = np.cos(alpha) * np.cos(theta)
-    mat[2, 1] = np.sin(alpha) * np.cos(theta)
+    matrixes[:, 0, 1] = -sin_theta * cos_alpha
+    matrixes[:, 1, 1] = cos_theta * cos_alpha
+    matrixes[:, 2, 1] = sin_alpha
 
-    mat[1, 2] = -np.sin(alpha)
-    mat[2, 2] = np.cos(alpha)
+    matrixes[:, 0, 2] = sin_alpha * sin_theta
+    matrixes[:, 1, 2] = -cos_theta * sin_alpha
+    matrixes[:, 2, 2] = cos_alpha
 
-    mat[0, 3] = a
-    mat[1, 3] = -d * np.sin(alpha)
-    mat[2, 3] = d * np.cos(alpha)
+    matrixes[:, 0, 3] = a * cos_theta
+    matrixes[:, 1, 3] = a * sin_theta
+    matrixes[:, 2, 3] = d
+    matrixes[:, 3, 3] = 1
 
-    return mat
+    return matrixes
 
 
 @njit(cache=True)
