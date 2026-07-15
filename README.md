@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python 3.11 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)  
+
 # 🤖 Kinematics Package
 
 A high-performance Python package for computing **forward and inverse kinematics** of N-DOF robotic manipulators. Built with speed in mind using Numba JIT compilation.
@@ -25,9 +27,36 @@ This package provides tools for:
 
 ## 📦 Installation
 
+### Uv
+
 ```bash
+git clone https://github.com/MichaelGs1/Kinematics.git
+cd Kinematics
+uv sync
+```
+
+### Pip
+
+```bash
+git clone https://github.com/MichaelGs1/Kinematics.git
+cd Kinematics
 pip install .
 ```
+
+### Optional dev dependencies :
+
+### Uv
+
+```bash
+uv sync --extra dev
+```
+
+### Pip
+
+```bash
+pip install "pytest>=7.0" "ruff>=0.3.0" "mypy>=1.8.0" "pre_commit>=4.6.0"
+```
+
 
 ## 🚀 Quick Start
 

@@ -12,6 +12,7 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy",
     "numba",
+    "matplotlib",
     "scipy",
     "tqdm",
 ]
@@ -45,7 +46,21 @@ fixable = ["I", "F401"]
 unfixable = []
 per-file-ignores = { "tests/*" = ["F401", "N802", "N803", "N806"] }
 
+[tool.mypy]
+python_version = 3.11
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
-[scripts]
-lint = "ruff check src/ tests/ examples"
-format = "ruff format src/ tests/ examples" 
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "numba.*,scipy.*,tqdm.*"
+ignore_missing_imports = true
