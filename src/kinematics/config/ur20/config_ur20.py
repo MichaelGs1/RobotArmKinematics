@@ -4,6 +4,8 @@ from kinematics.config.config import BaseConfig, RepresentationType
 
 
 class UR20Config(BaseConfig):
+    __slots__ = ()
+
     def __init__(self) -> None:
         a = np.array([0, -0.8618, -0.7277, 0, 0, 0])
         d = np.array([0.236, 0, 0, 0.2019, 0.1594, 0.1548])

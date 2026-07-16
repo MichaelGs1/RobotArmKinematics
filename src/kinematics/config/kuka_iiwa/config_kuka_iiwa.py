@@ -4,6 +4,8 @@ from kinematics.config.config import BaseConfig, RepresentationType
 
 
 class KukaIiwaConfig(BaseConfig):
+    __slots__ = ()
+
     def __init__(self) -> None:
         a = np.array([0, 0, 0, 0, 0, 0, 0])
         d = np.array([0.360, 0, 0.420, 0, 0.400, 0, 0.126])

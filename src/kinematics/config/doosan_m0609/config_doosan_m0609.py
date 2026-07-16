@@ -5,6 +5,8 @@ from kinematics.core.core import _get_link_matrix_numba
 
 
 class DoosanM0609Config(BaseConfig):
+    __slots__ = ()
+
     def __init__(self) -> None:
         # doosan dh
         a3 = 0.411
