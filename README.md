@@ -82,8 +82,8 @@ pip install "pytest>=7.0" "ruff>=0.3.0" "mypy>=1.8.0" "pre_commit>=4.6.0"
 ## 🚀 Quick Start
 
 ```python
-from kinematics.config.ur10 import UR10Config
-from kinematics.core.robot import RobotArmKinematics
+from robot_arm_kinematics.config.ur10 import UR10Config
+from robot_arm_kinematics.core.robot import RobotArmKinematics
 import numpy as np
 
 # Load robot configuration
@@ -190,7 +190,7 @@ Transformation Matrix:
 ## 📚 Module Structure
 
 ```
-src/kinematics/
+src/robot_arm_kinematics/
 ├── core/
 │   ├── core.py              # FK, IK, Jacobian computations
 │   └── trajectory.py        # Trajectory generation
@@ -215,13 +215,13 @@ To add support for a new robot, follow these steps:
 
 ### Step 1: Create Configuration File
 
-Create a new directory under `src/kinematics/config/YOUR_ROBOT_NAME/`:
+Create a new directory under `src/robot_arm_kinematics/config/YOUR_ROBOT_NAME/`:
 
 ```python
-# src/kinematics/config/your_robot_name/config_your_robot.py
+# src/robot_arm_kinematics/config/your_robot_name/config_your_robot.py
 
 import numpy as np
-from kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
 
 class YourRobotConfig(BaseConfig):
     """Configuration for Your Robot."""
@@ -264,7 +264,7 @@ class YourRobotConfig(BaseConfig):
 ### Step 2: Create __init__.py
 
 ```python
-# src/kinematics/config/your_robot_name/__init__.py
+# src/robot_arm_kinematics/config/your_robot_name/__init__.py
 
 from .config_your_robot import YourRobotConfig
 
@@ -274,8 +274,8 @@ __all__ = ["YourRobotConfig"]
 ### Step 3: Use Your Configuration
 
 ```python
-from kinematics.config.your_robot_name import YourRobotConfig
-from kinematics.core.robot import RobotArmKinematics
+from robot_arm_kinematics.config.your_robot_name import YourRobotConfig
+from robot_arm_kinematics.core.robot import RobotArmKinematics
 
 config = YourRobotConfig()
 robot = RobotArmKinematics(config)
@@ -290,8 +290,8 @@ success, q_sol = robot.ik(T, q)
 ### Creating a Robot Instance
 
 ```python
-from kinematics.config.ur10 import UR10Config
-from kinematics.core.robot import RobotArmKinematics
+from robot_arm_kinematics.config.ur10 import UR10Config
+from robot_arm_kinematics.core.robot import RobotArmKinematics
 
 config = UR10Config()
 robot = RobotArmKinematics(config)
@@ -425,7 +425,7 @@ Computes radius of ellipsoid along a given direction.
 Trajectory generation functions are available for motion planning:
 
 ```python
-from kinematics.core.trajectory import compute_linear_trajectory, compute_circular_trajectory
+from robot_arm_kinematics.core.trajectory import compute_linear_trajectory, compute_circular_trajectory
 
 # Linear trajectory from current pose
 T_current = robot.fk(q)
@@ -439,9 +439,9 @@ trajectory = compute_circular_trajectory(T_current, center=[0, 0, 0],
 ## 📊 Visualization
 
 ```python
-from kinematics.core.robot import RobotArmKinematics
-from kinematics.config.ur10 import UR10Config
-from kinematics.utils.utils_graph import create_graph, plot_robot_3d, plot_tcp
+from robot_arm_kinematics.core.robot import RobotArmKinematics
+from robot_arm_kinematics.config.ur10 import UR10Config
+from robot_arm_kinematics.utils.utils_graph import create_graph, plot_robot_3d, plot_tcp
 import numpy as np
 
 # Create robot
