@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from kinematics.core import (
+from robot_arm_kinematics.core import (
     compute_circular_trajectory,
     compute_linear_trajectory,
     compute_velocity,
 )
-from kinematics.utils import create_graph, display_vector, plot_frame
+from robot_arm_kinematics.utils import create_graph, display_vector, plot_frame
 
 
 def main() -> None:

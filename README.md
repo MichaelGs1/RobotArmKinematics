@@ -4,6 +4,10 @@
 
 A high-performance Python package for computing **forward and inverse kinematics** of N-DOF robotic manipulators. Built with speed in mind using Numba JIT compilation.
 
+## 📄 License
+
+This repository's source code is released under the MIT License.
+
 ## 📋 Overview
 
 This package provides tools for:
@@ -24,6 +28,23 @@ This package provides tools for:
 - ✅ IK with both position and orientation constraints
 - ✅ Dynamic analysis with gravity effects
 - ✅ Manipulability and force analysis with ellipsoid visualization
+
+<br/>
+
+# Table of Contents
+
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Denavit-Hartenberg Conventions](#-denavit-hartenberg-conventions)
+- [Module Structure](#-module-structure)
+- [Adding a New Robot Configuration](#-adding-a-new-robot-configuration)
+- [API Documentation](#-api-documentation)
+- [Visualization](#-visualization)
+- [Examples](#-examples)
+- [Performance](#-performance)
+- [Dependencies](#-dependencies)
+- [Authors](#-authors)
+
 
 ## 📦 Installation
 
@@ -466,11 +487,8 @@ All core computations use Numba JIT compilation for high performance:
 - `scipy` - Testing
 - `tqdm` - Visualization
 
-## 📄 License
-
-MIT
 
 ## 👤 Authors
 
-Michaël Gross
-ALTEN SA
+- Michaël Gross
+- ALTEN SA

@@ -1,14 +1,23 @@
 [build-system]
-requires = ["setuptools>=65", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-name = "kinematics"
-version = "0.1.0"
-description = "Kinematics package"
-authors = [{name = "Michaël Gross"}]
+name = "robot_arm_kinematics"
+version = "1.0.0"
+description = "Robot arm kinematics package"
+readme = "README.md"
+license = {text = "MIT"}
+license-files = ["LICENSE*"]
+authors = [
+    {name = "Michaël Gross"},
+    {name = "ALTEN SA"},
+]
 requires-python = ">=3.11"
-
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
     "numba",
@@ -17,17 +26,18 @@ dependencies = [
     "tqdm",
 ]
 
+[project.urls]
+Homepage = "https://github.com/MichaelGs1/RobotArmKinematics"
+Issues = "https://github.com/MichaelGs1/RobotArmKinematics/issues"
+
+
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "ruff>=0.3.0",
-    "mypy>=1.8.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+    "mypy>=2.1.0",
     "pre_commit>=4.6.0",
 ]
-
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

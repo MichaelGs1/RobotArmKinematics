@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from kinematics.config.config import BaseConfig, RepresentationType
-from kinematics.core.robot import RobotArmKinematics
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.core.robot import RobotArmKinematics
 
 
 class SimpleRobotConfig(BaseConfig):

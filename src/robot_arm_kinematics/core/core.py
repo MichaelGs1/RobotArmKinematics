@@ -1,8 +1,12 @@
 import numpy as np
 from numba import float64, int32, njit
 
-from kinematics.config.config import RepresentationType
-from kinematics.utils.utils_compute import dh_mat, dh_mat_khalil, matrix_to_rotvect
+from robot_arm_kinematics.config.config import RepresentationType
+from robot_arm_kinematics.utils.utils_compute import (
+    dh_mat,
+    dh_mat_khalil,
+    matrix_to_rotvect,
+)
 
 
 @njit((float64[:], float64[:], float64[:], float64[:], float64[:], int32), cache=True)

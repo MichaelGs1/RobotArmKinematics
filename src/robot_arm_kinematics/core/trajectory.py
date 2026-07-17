@@ -1,7 +1,10 @@
 import numpy as np
 from numba import njit
 
-from kinematics.utils.utils_compute import matrix_to_rotvect, rotvect_to_matrix
+from robot_arm_kinematics.utils.utils_compute import (
+    matrix_to_rotvect,
+    rotvect_to_matrix,
+)
 
 
 @njit(cache=True)

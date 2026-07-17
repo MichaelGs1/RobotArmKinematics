@@ -1,7 +1,7 @@
 import numpy as np
 
-from kinematics.config.config import BaseConfig, RepresentationType
-from kinematics.core.core import _get_link_matrix_numba
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.core.core import _get_link_matrix_numba
 
 
 class DoosanM0609Config(BaseConfig):

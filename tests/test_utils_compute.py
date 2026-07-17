@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from kinematics.utils.utils_compute import (
+from robot_arm_kinematics.utils.utils_compute import (
     dh_mat,
     dh_mat_khalil,
     matrix_to_rotvect,

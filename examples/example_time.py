@@ -5,8 +5,8 @@ from typing import Any, Callable
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from kinematics.config.doosan_m0609 import DoosanM0609Config
-from kinematics.core import RobotArmKinematics
+from robot_arm_kinematics.config.doosan_m0609 import DoosanM0609Config
+from robot_arm_kinematics.core import RobotArmKinematics
 
 
 def benchmark_numba(

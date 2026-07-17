@@ -2,11 +2,13 @@
 
 import numpy as np
 
-from kinematics.config.config import BaseConfig, RepresentationType
-from kinematics.config.doosan_m0609.config_doosan_m0609 import DoosanM0609Config
-from kinematics.config.kuka_iiwa.config_kuka_iiwa import KukaIiwaConfig
-from kinematics.config.ur10.config_ur10 import UR10Config
-from kinematics.config.ur20.config_ur20 import UR20Config
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.config.doosan_m0609.config_doosan_m0609 import (
+    DoosanM0609Config,
+)
+from robot_arm_kinematics.config.kuka_iiwa.config_kuka_iiwa import KukaIiwaConfig
+from robot_arm_kinematics.config.ur10.config_ur10 import UR10Config
+from robot_arm_kinematics.config.ur20.config_ur20 import UR20Config
 
 
 class TestBaseConfig:

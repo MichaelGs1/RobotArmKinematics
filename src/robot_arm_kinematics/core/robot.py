@@ -2,8 +2,8 @@ from typing import cast
 
 import numpy as np
 
-from kinematics.config.config import BaseConfig
-from kinematics.core.core import (
+from robot_arm_kinematics.config.config import BaseConfig
+from robot_arm_kinematics.core.core import (
     _compute_force_ellipsoid_numba,
     _compute_force_numba,
     _compute_normalize_force_ellipsoid_numba,

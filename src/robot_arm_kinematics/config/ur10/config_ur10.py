@@ -1,6 +1,6 @@
 import numpy as np
 
-from kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
 
 
 class UR10Config(BaseConfig):

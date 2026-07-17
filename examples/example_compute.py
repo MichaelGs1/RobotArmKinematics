@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
 
-from kinematics.utils import matrix_to_rotvect, rotvect_to_matrix
+from robot_arm_kinematics.utils import matrix_to_rotvect, rotvect_to_matrix
 
 
 def is_valid_rotation_matrix(R: np.ndarray) -> bool:

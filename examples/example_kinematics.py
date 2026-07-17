@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from kinematics.config.doosan_m0609 import DoosanM0609Config
-from kinematics.core import RobotArmKinematics
-from kinematics.utils import (
+from robot_arm_kinematics.config.doosan_m0609 import DoosanM0609Config
+from robot_arm_kinematics.core import RobotArmKinematics
+from robot_arm_kinematics.utils import (
     create_graph,
     display_vector,
     plot_ellipsoid,

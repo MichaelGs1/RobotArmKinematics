@@ -1,10 +1,10 @@
 import numpy as np
 
-from kinematics.config.config import BaseConfig, RepresentationType
-from kinematics.config.doosan_m0609 import DoosanM0609Config
-from kinematics.config.kuka_iiwa import KukaIiwaConfig
-from kinematics.config.ur20 import UR20Config
-from kinematics.utils import dh_mat, dh_mat_khalil
+from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.config.doosan_m0609 import DoosanM0609Config
+from robot_arm_kinematics.config.kuka_iiwa import KukaIiwaConfig
+from robot_arm_kinematics.config.ur20 import UR20Config
+from robot_arm_kinematics.utils import dh_mat, dh_mat_khalil
 
 
 def display_config(config: BaseConfig) -> None:
