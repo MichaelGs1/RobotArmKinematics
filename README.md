@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python 3.11 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)  
 
-# 🤖 Kinematics Package
+# 🤖 RobotArmKinematics Package
 
 A high-performance Python package for computing **forward and inverse kinematics** of N-DOF robotic manipulators. Built with speed in mind using Numba JIT compilation.
 
