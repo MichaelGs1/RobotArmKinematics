@@ -58,6 +58,13 @@ uv sync
 
 ### Pip
 
+From PyPi:
+```bash
+pip install robot_arm_kinematics
+```
+
+Or locally
+
 ```bash
 git clone https://github.com/MichaelGs1/Kinematics.git
 cd Kinematics
