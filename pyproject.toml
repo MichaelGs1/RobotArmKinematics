@@ -13,9 +13,11 @@ authors = [
     {name = "Michaël Gross"},
     {name = "ALTEN SA"},
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 classifiers = [
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
 dependencies = [

@@ -19,6 +19,13 @@ class RepresentationType(Enum):
     DH_KHALIL = 1
 
 
+class IKSolverMethod(Enum):
+    TRANSPOSE = 0
+    PSEUDO_INVERSE = 1
+    NEWTON_RAPHSON = 2
+    DLS = 3
+
+
 class BaseConfig(ABC):
     """
     Abstract base class for robotic configuration parameters.

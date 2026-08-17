@@ -2,7 +2,7 @@ from typing import cast
 
 import numpy as np
 
-from robot_arm_kinematics.config.config import BaseConfig
+from robot_arm_kinematics.config.config import BaseConfig, IKSolverMethod
 from robot_arm_kinematics.core.core import (
     _compute_force_ellipsoid_numba,
     _compute_force_numba,
@@ -159,7 +159,7 @@ class RobotArmKinematics:
         epsilon_pos: float = 1e-4,
         epsilon_orient: float = 1e-3,
         max_iter: int = 1000,
-        alpha_fix: float = 0.2,
+        solver_method: IKSolverMethod = IKSolverMethod.DLS,
     ) -> tuple[bool, np.ndarray]:
         """Inverse kinematics: compute joint angles from desired end-effector pose.
 
@@ -173,7 +173,7 @@ class RobotArmKinematics:
                 epsilon_pos (float, optional): Position error threshold (m). Defaults to 1e-4.
                 epsilon_orient (float, optional): Orientation error threshold (rad). Defaults to 1e-3.
                 max_iter (int, optional): Maximum iterations. Defaults to 1000.
-                alpha_fix (float, optional): Step size damping factor [0, 1]. Defaults to 0.2.
+                solver_method (IKSolverMethod, optional): Solver method (Transpose, Pseudo-inverse, Newton-Raphson, Damped-least-square(DLS))
 
             Returns:
                 np.ndarray: Tuple of (success: bool, joint_angles: np.ndarray shape (n,)).
@@ -194,7 +194,7 @@ class RobotArmKinematics:
                 epsilon_pos,
                 epsilon_orient,
                 max_iter,
-                alpha_fix,
+                solver_method.value,
             ),
         )
 

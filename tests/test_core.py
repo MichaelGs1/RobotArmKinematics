@@ -3,7 +3,11 @@
 import numpy as np
 import pytest
 
-from robot_arm_kinematics.config.config import BaseConfig, RepresentationType
+from robot_arm_kinematics.config.config import (
+    BaseConfig,
+    IKSolverMethod,
+    RepresentationType,
+)
 from robot_arm_kinematics.core.robot import RobotArmKinematics
 
 
@@ -220,7 +224,7 @@ class TestJacobian:
 class TestInverseKinematics:
     """Test inverse kinematics computation."""
 
-    def test_ik_convergence_near_solution(self, robot):
+    def test_ik_convergence_method_transpose_near_solution(self, robot):
         """Test IK convergence from initial guess near solution.
 
         Note: IK requires initial guess close to solution (typical in robotics).
@@ -238,6 +242,91 @@ class TestInverseKinematics:
             epsilon_pos=1e-4,
             epsilon_orient=1e-3,
             max_iter=1000,
+            solver_method=IKSolverMethod.TRANSPOSE,
+        )
+
+        assert success
+        # Verify solution by forward kinematics
+        T_verify = robot.fk(q_solution)
+        np.testing.assert_array_almost_equal(
+            T_target[:3, 3], T_verify[:3, 3], decimal=4
+        )
+
+    def test_ik_convergence_method_pseudo_inverse_near_solution(self, robot):
+        """Test IK convergence from initial guess near solution.
+
+        Note: IK requires initial guess close to solution (typical in robotics).
+        Starting from zero may not converge to distant targets.
+        """
+        # First, compute FK for a known configuration
+        q_target = np.array([0.2, 0.3, -0.2, 0.1, -0.1, 0.15])
+        T_target = robot.fk(q_target)
+
+        # Start from near the target (offset by small perturbation)
+        q_init = q_target + 0.1 * np.ones(6)
+        success, q_solution = robot.ik(
+            T_target,
+            q_init,
+            epsilon_pos=1e-4,
+            epsilon_orient=1e-3,
+            max_iter=1000,
+            solver_method=IKSolverMethod.PSEUDO_INVERSE,
+        )
+
+        assert success
+        # Verify solution by forward kinematics
+        T_verify = robot.fk(q_solution)
+        np.testing.assert_array_almost_equal(
+            T_target[:3, 3], T_verify[:3, 3], decimal=4
+        )
+
+    def test_ik_convergence_method_newton_near_solution(self, robot):
+        """Test IK convergence from initial guess near solution.
+
+        Note: IK requires initial guess close to solution (typical in robotics).
+        Starting from zero may not converge to distant targets.
+        """
+        # First, compute FK for a known configuration
+        q_target = np.array([0.2, 0.3, -0.2, 0.1, -0.1, 0.15])
+        T_target = robot.fk(q_target)
+
+        # Start from near the target (offset by small perturbation)
+        q_init = q_target + 0.1 * np.ones(6)
+        success, q_solution = robot.ik(
+            T_target,
+            q_init,
+            epsilon_pos=1e-4,
+            epsilon_orient=1e-3,
+            max_iter=1000,
+            solver_method=IKSolverMethod.NEWTON_RAPHSON,
+        )
+
+        assert success
+        # Verify solution by forward kinematics
+        T_verify = robot.fk(q_solution)
+        np.testing.assert_array_almost_equal(
+            T_target[:3, 3], T_verify[:3, 3], decimal=4
+        )
+
+    def test_ik_convergence_method_dls_near_solution(self, robot):
+        """Test IK convergence from initial guess near solution.
+
+        Note: IK requires initial guess close to solution (typical in robotics).
+        Starting from zero may not converge to distant targets.
+        """
+        # First, compute FK for a known configuration
+        q_target = np.array([0.2, 0.3, -0.2, 0.1, -0.1, 0.15])
+        T_target = robot.fk(q_target)
+
+        # Start from near the target (offset by small perturbation)
+        q_init = q_target + 0.1 * np.ones(6)
+        success, q_solution = robot.ik(
+            T_target,
+            q_init,
+            epsilon_pos=1e-4,
+            epsilon_orient=1e-3,
+            max_iter=1000,
+            solver_method=IKSolverMethod.DLS,
         )
 
         assert success

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+from robot_arm_kinematics.config.config import IKSolverMethod
 from robot_arm_kinematics.config.doosan_m0609 import DoosanM0609Config
 from robot_arm_kinematics.core import RobotArmKinematics
 from robot_arm_kinematics.utils import (
@@ -26,7 +27,7 @@ def main() -> None:
     # config.set_tool_shape(1.280, np.array([-0.01396, 0.0067, 0.195]))
 
     q = np.deg2rad(np.array([0, 0, -90, 0, -90, 180]))  # base
-    q = np.random.uniform(config.q_min, config.q_max)  # random
+    # q = np.random.uniform(config.q_min, config.q_max)  # random
     print(q)
 
     # get robot link
@@ -73,7 +74,7 @@ def main() -> None:
     pose[:3, 3] = position.T
     print("Pose : ", pose)
 
-    res, q_target = robot.ik(pose, q)
+    res, q_target = robot.ik(pose, q, solver_method=IKSolverMethod.DLS)
     print("Solution : ", res)
     print("q (rad) : ", q_target)
     print("q (deg) : ", np.rad2deg(q_target))

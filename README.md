@@ -1,4 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python 3.11 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python 3.10 3.11 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)  
 
 # 🤖 RobotArmKinematics Package
 
@@ -314,7 +314,7 @@ Computes end-effector pose (4×4 homogeneous matrix) from joint angles.
 #### Inverse Kinematics
 ```python
 success, q = robot.ik(target_pose, q_init, epsilon_pos=1e-4, 
-                      epsilon_orient=1e-3, max_iter=1000, alpha_fix=0.2)
+                      epsilon_orient=1e-3, max_iter=1000)
 ```
 Iteratively solves for joint angles given desired end-effector pose.
 
@@ -324,7 +324,7 @@ Iteratively solves for joint angles given desired end-effector pose.
 - `epsilon_pos` (float): Position error threshold (m), default 1e-4
 - `epsilon_orient` (float): Orientation error threshold (rad), default 1e-3
 - `max_iter` (int): Maximum iterations, default 1000
-- `alpha_fix` (float): Step size damping [0, 1], default 0.2
+- `solver_method` (IKSolverMethod): Solver method (Transpose, Pseudo-inverse, Newton-Raphson, Damped-least-square(DLS))
 
 **Returns:**
 - `success` (bool): Whether IK converged

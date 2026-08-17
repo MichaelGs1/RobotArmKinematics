@@ -1,7 +1,7 @@
 import numpy as np
 from numba import float64, int32, njit
 
-from robot_arm_kinematics.config.config import RepresentationType
+from robot_arm_kinematics.config.config import IKSolverMethod, RepresentationType
 from robot_arm_kinematics.utils.utils_compute import (
     dh_mat,
     dh_mat_khalil,
@@ -311,6 +311,86 @@ def _fk_numba(
     return T0tool
 
 
+@njit((float64[:, ::1], float64[::1]), cache=True)
+def _transpose_solver(J: np.ndarray, error: np.ndarray) -> np.ndarray:
+    """Solver transpose jacobian
+
+    Args:
+        J (np.ndarray): jacobian
+        error (np.ndarray): error
+
+    Returns:
+        np.ndarray: delta q
+    """
+    alpha_fix = 0.2
+    dq: np.ndarray = alpha_fix * np.dot(np.ascontiguousarray(J.T), error)
+    return dq
+
+
+@njit((float64[:, ::1], float64[::1]), cache=True)
+def _pseudo_inverse_solver(J: np.ndarray, error: np.ndarray) -> np.ndarray:
+    """Solver pseudo inverse jacobian
+
+    Args:
+        J (np.ndarray): jacobian
+        error (np.ndarray): error
+
+    Returns:
+        np.ndarray: delta q
+    """
+    JT = np.ascontiguousarray(J.T)
+    dq: np.ndarray = JT @ np.linalg.solve(
+        (J @ JT), error
+    )  # solve(A, B) equivalent inv(A)@B
+    return dq
+
+
+@njit((float64[:, ::1], float64[::1]), cache=True)
+def _newton_raphson_solver(J: np.ndarray, error: np.ndarray) -> np.ndarray:
+    """Solver Newton-Raphson
+
+    Args:
+        J (np.ndarray): jacobian
+        error (np.ndarray): error
+
+    Returns:
+        np.ndarray: delta q
+    """
+    dq: np.ndarray = np.dot(np.linalg.pinv(J), error)
+    return dq
+
+
+@njit((float64[:, ::1], float64[::1]), cache=True)
+def _dls_solver(J: np.ndarray, error: np.ndarray) -> np.ndarray:
+    """Solver damped least square
+
+    Args:
+        J (np.ndarray): jacobian
+        error (np.ndarray): error
+
+    Returns:
+        np.ndarray: delta q
+    """
+    # dynamic damping constant
+    _, S, _ = np.linalg.svd(J)
+    sigma_min = S[-1]
+
+    sigma_threshold = 0.05
+    lambda_max = 0.5
+
+    if sigma_min < sigma_threshold:
+        lamb = lambda_max * (1.0 - sigma_min / sigma_threshold)
+    else:
+        lamb = 0.0
+
+    JT = np.ascontiguousarray(J.T)
+
+    damped_factor = np.identity(6) * lamb**2
+    A = J @ JT + damped_factor
+    dq: np.ndarray = JT @ np.linalg.solve(A, error)
+    return dq
+
+
 @njit(
     (
         float64[:, :],
@@ -344,7 +424,7 @@ def _ik_numba(
     epsilon_pos: float = 1e-4,
     epsilon_orient: float = 1e-3,
     max_iter: int = 1000,
-    alpha_fix: float = 0.2,
+    solver_method_value: int = 3,
 ) -> tuple[bool, np.ndarray]:
     """Inverse kinematics: compute joint angles from desired end-effector pose.
 
@@ -365,7 +445,7 @@ def _ik_numba(
         epsilon_pos: Position error threshold (m), default 1e-4.
         epsilon_orient: Orientation error threshold (rad), default 1e-3.
         max_iter: Maximum iterations, default 1000.
-        alpha_fix: Step size damping factor [0, 1], default 0.2.
+        solver_method_value: Solver type
 
     Returns:
         Tuple of (success: bool, joint_angles: np.ndarray shape (n,)).
@@ -397,13 +477,22 @@ def _ik_numba(
             find_solution = True
             break
 
-        # --- correction via pseudo-inverse ---
-        error = np.hstack((e_pos, e_orient))  # 6x1
-        J = _get_jacobian_numba(
-            q, a, d, alpha, theta, representation_type_value, tcp
+        # --- compute error ---
+        error = np.ascontiguousarray(np.hstack((e_pos, e_orient)))  # 6x1
+        J = np.ascontiguousarray(
+            _get_jacobian_numba(q, a, d, alpha, theta, representation_type_value, tcp)
         )  # 6x6
 
-        dq = alpha_fix * np.dot(np.linalg.pinv(J), error)
+        # solver
+        if solver_method_value == IKSolverMethod.TRANSPOSE.value:
+            dq = _transpose_solver(J, error)
+        elif solver_method_value == IKSolverMethod.PSEUDO_INVERSE.value:
+            dq = _pseudo_inverse_solver(J, error)
+        elif solver_method_value == IKSolverMethod.NEWTON_RAPHSON.value:
+            dq = _newton_raphson_solver(J, error)
+        else:
+            dq = _dls_solver(J, error)
+
         q += dq
         q = np.clip(q, q_min, q_max)
 
