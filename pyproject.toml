@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "robot_arm_kinematics"
-version = "1.0.0"
+version = "1.0.1"
 description = "Robot arm kinematics package"
 readme = "README.md"
 license = {text = "MIT"}
